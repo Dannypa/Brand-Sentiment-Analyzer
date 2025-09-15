@@ -13,3 +13,15 @@ reddit = praw.Reddit(
 )
 
 print(reddit.user.me())
+
+all = reddit.subreddit("all") # all subreddits
+
+submissions = [submission for submission in all.search("nike", time_filter="month")]
+
+print(f"Found {len(submissions)} submissions")
+
+for submission in submissions:
+    print(submission.title)
+    print(submission.created_utc)
+    print(submission.score)
+    print()
