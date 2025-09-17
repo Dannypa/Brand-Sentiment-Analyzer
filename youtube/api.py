@@ -65,7 +65,7 @@ def execute_comment_query(
         q: CommentThreadRetrieveQuery
 ):
     query = [
-        "'https://youtube.googleapis.com/youtube/v3/commentThreads?",
+        "https://youtube.googleapis.com/youtube/v3/commentThreads?",
         f"videoId={q.video_id}&",
         f"part={','.join(q.part)}&",
         f"textFormat=plainText&",
