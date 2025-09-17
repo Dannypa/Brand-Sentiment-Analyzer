@@ -16,7 +16,7 @@ def main():
 
     for i in range(pages):
         videos = search_videos(query = q, max_results = 100, start_date = "2024-01-01T00:00:00Z",end_date = "2025-09-17T00:00:00Z", page_token = page_token)
-        videos = searchListResponse(**videos)
+        videos = SearchListResponse(**videos)
 
         all_videos.extend(videos.items)
         page_token = videos.nextPageToken
@@ -28,7 +28,7 @@ def main():
         video_id = vid.id.videoId
         video_title = vid.snippet.title
         video_details = get_video_details(video_id)
-        video_details = videoListResponse(**video_details)
+        video_details = VideoListResponse(**video_details)
 
         video_views = int(video_details.items[0].statistics.viewCount or 0)
         video_likes = int(video_details.items[0].statistics.likeCount or 0)
@@ -37,7 +37,7 @@ def main():
 #--------exclude <5000 views & brand name not in video title
         if video_views >= 5000 and brand.lower() in video_title.lower(): 
             vid_comments = get_comments(video_id)
-            vid_comments = commentListResponse(**vid_comments)
+            vid_comments = CommentListResponse(**vid_comments)
             all_comments = []
 #----------comments + replies
             for c in vid_comments.items: 
