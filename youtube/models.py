@@ -3,6 +3,29 @@ from typing import Optional
 from datetime import datetime
 
 
+# Model for building a search query
+class SearchQuery(BaseModel):
+    q: str
+    part: tuple[str] = ("id", "snippet")
+    type: str = "video"
+    max_results: int = 50
+    published_after: Optional[datetime] = None
+    published_before: Optional[datetime] = None
+    video_duration: tuple[str] = ("medium",)
+    order: str = "relevance"
+    language: str = "en"
+    page_token: Optional[str] = None
+
+
+class CommentThreadRetrieveQuery(BaseModel):
+    video_id: str
+    part: tuple[str] = ("snippet",)
+    max_results: int = 100
+    order: str = "relevance"
+    search_terms: Optional[tuple[str]] = None
+    page_token: Optional[str] = None
+
+
 # Models for video search
 class Id(BaseModel):
     kind: str
