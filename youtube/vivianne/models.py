@@ -1,58 +1,65 @@
-from pydantic import BaseModel, RootModel
-from typing import Optional 
+from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime
 
+
 # Models for video search
-class id(BaseModel):
+class Id(BaseModel):
     kind: str
     videoId: str
     channelId: Optional[str] = None
     playlistId: Optional[str] = None
 
-class thumbnail(BaseModel):
+
+class Thumbnail(BaseModel):
     url: str
     width: int
     height: int
 
-class thumbnails(BaseModel):
-    default: thumbnail
-    medium: thumbnail
-    high: thumbnail
-    standard: Optional[thumbnail] = None
-    maxres: Optional[thumbnail] = None
-                 
-class searchSnippet(BaseModel):
+
+class Thumbnails(BaseModel):
+    default: Thumbnail
+    medium: Thumbnail
+    high: Thumbnail
+    standard: Optional[Thumbnail] = None
+    maxres: Optional[Thumbnail] = None
+
+
+class SearchSnippet(BaseModel):
     publishedAt: datetime
     channelId: str
     title: str
     description: str
-    thumbnails: thumbnails
+    thumbnails: Thumbnails
     channelTitle: str
     liveBroadcastContent: str
 
-class searchItem(BaseModel):
+
+class SearchItem(BaseModel):
     kind: str
     etag: str
-    id: id
-    snippet: searchSnippet
+    id: Id
+    snippet: SearchSnippet
     channelTitle: Optional[str] = None
     liveBroadcastContent: Optional[str] = None
 
-class searchListResponse(BaseModel):
+
+class SearchListResponse(BaseModel):
     kind: str
     etag: str
-    nextPageToken: Optional[str]
+    nextPageToken: Optional[str] = None
     prevPageToken: Optional[str] = None
     regionCode: str
     pageInfo: dict[str, int]
-    items: list[searchItem]
+    items: list[SearchItem]
+
 
 # Models for Comments
-class commentSnippet(BaseModel):
+class CommentSnippet(BaseModel):
     authorDisplayName: str
     authorProfileImageUrl: str
     authorChannelUrl: str
-    authorChannelId: Dict[str, str]
+    authorChannelId: dict[str, str]
     channelId: str
     textDisplay: str
     textOriginal: str
@@ -64,60 +71,63 @@ class commentSnippet(BaseModel):
     publishedAt: datetime
     updatedAt: datetime
 
-class comment(BaseModel):
+
+class Comment(BaseModel):
     kind: str
     etag: str
     id: str
-    snippet: commentSnippet
+    snippet: CommentSnippet
 
-class commentThreadSnippet(BaseModel):
+
+class CommentThreadSnippet(BaseModel):
     channelId: str
     videoId: str
-    topLevelComment: comment
+    topLevelComment: Comment
     canReply: bool
     totalReplyCount: int
     isPublic: bool
 
-class commentThread(BaseModel):
+
+class CommentThread(BaseModel):
     kind: str
     etag: str
     id: str
-    snippet: commentThreadSnippet
-    replies: Optional[Dict[str, list[comment]]] = None
+    snippet: CommentThreadSnippet
+    replies: Optional[dict[str, list[Comment]]] = None
 
-class commentListResponse(BaseModel):
+
+class CommentListResponse(BaseModel):
     kind: str
     etag: str
-    nextPageToken: Optional[str]
-    pageInfo: Dict[str, int]
-    items: list[commentThread]
+    nextPageToken: Optional[str] = None
+    pageInfo: dict[str, int]
+    items: list[CommentThread]
 
-#Video models
 
-class videoStatistics(BaseModel):
+# Video models
+
+class VideoStatistics(BaseModel):
     viewCount: str
     likeCount: Optional[str] = None
     dislikeCount: Optional[str] = None
     favoriteCount: str
     commentCount: Optional[str] = None
 
-class video(BaseModel):
+
+class Video(BaseModel):
     kind: str
     etag: str
     id: str
-    statistics: videoStatistics
+    statistics: VideoStatistics
 
-class pageInfo(BaseModel):
+
+class PageInfo(BaseModel):
     totalResults: int
     resultsPerPage: int
 
-class videoListResponse(BaseModel):
+
+class VideoListResponse(BaseModel):
     kind: str
     etag: str
-    pageInfo: pageInfo
-    items: list[video]
-    
-
-
-
-
+    pageInfo: PageInfo
+    items: list[Video]

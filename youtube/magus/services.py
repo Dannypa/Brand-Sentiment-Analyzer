@@ -1,6 +1,7 @@
 from api import get_video_details, get_comments, search_videos
 from models import *
 import pandas as pd
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 def get_comment_reply_dict(comment_threads: commentListResponse):
     comment_reply_dict = {}
@@ -16,7 +17,7 @@ def get_comment_reply_dict(comment_threads: commentListResponse):
     return comment_reply_dict
 
 
-def video_to_dataframe(videos: searchListResponse):
+def video_to_dataframe(videos: searchListResponse, video_stats=None):
     video_data = []
     for item in videos.items:
         video_id = item.id.videoId
@@ -39,6 +40,19 @@ def video_to_dataframe(videos: searchListResponse):
 def get_video_stats(video_details: videoListResponse):
     stats = video_details.items[0].statistics
     return stats
+
+def comments_to_list_of_top_level(comments: commentListResponse):
+    comment_list = []
+    for item in comments.items:
+        top_level_comment = item.snippet.topLevelComment
+        comment_text = top_level_comment.snippet.textOriginal
+        comment_list.append(comment_text)
+    return comment_list
+
+def sentiment_score(sentence):
+    sid_obj = SentimentIntensityAnalyzer()
+    sentiment_dict = sid_obj.polarity_scores(sentence)
+    return sentiment_dict    
 
 # def comments_to_dataframe(comments: commentListResponse):
     
