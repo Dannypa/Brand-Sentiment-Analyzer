@@ -41,7 +41,7 @@ class searchItem(BaseModel):
 class searchListResponse(BaseModel):
     kind: str
     etag: str
-    nextPageToken: Optional[str]
+    nextPageToken: Optional[str] = None
     prevPageToken: Optional[str] = None
     regionCode: str
     pageInfo: dict[str, int]
@@ -52,7 +52,7 @@ class commentSnippet(BaseModel):
     authorDisplayName: str
     authorProfileImageUrl: str
     authorChannelUrl: str
-    authorChannelId: Dict[str, str]
+    authorChannelId: dict[str, str]
     channelId: str
     textDisplay: str
     textOriginal: str
@@ -83,13 +83,13 @@ class commentThread(BaseModel):
     etag: str
     id: str
     snippet: commentThreadSnippet
-    replies: Optional[Dict[str, list[comment]]] = None
+    replies: Optional[dict[str, list[comment]]] = None
 
 class commentListResponse(BaseModel):
     kind: str
     etag: str
-    nextPageToken: Optional[str]
-    pageInfo: Dict[str, int]
+    nextPageToken: Optional[str] = None
+    pageInfo: dict[str, int]
     items: list[commentThread]
 
 #Video models
@@ -116,8 +116,31 @@ class videoListResponse(BaseModel):
     etag: str
     pageInfo: pageInfo
     items: list[video]
-    
 
+# Model for Finnhub
+class symbolItem(BaseModel):
+    description: str
+    displaySymbol: str
+    symbol: str
+    type: str
+
+class symbolLookup(BaseModel):
+    count: int
+    result: list[symbolItem]
+
+class companyProfile(BaseModel):
+    country: str
+    currency: str
+    exchange: str
+    ipo: str
+    marketCapitalization: Optional[float] = None
+    name: str
+    phone: str
+    shareOutstanding: Optional[float] = None
+    ticker: str
+    weburl: str
+    logo: str
+    finnhubIndustry: str
 
 
 

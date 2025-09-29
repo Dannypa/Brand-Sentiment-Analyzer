@@ -37,6 +37,14 @@ def video_to_dataframe(videos: searchListResponse, video_stats=None):
     df = pd.DataFrame(video_data)
     return df
 
+def remove_videos_without_comments(videos_df: pd.DataFrame):
+    filtered_df = videos_df[videos_df['comment_count'].notna() & (videos_df['comment_count'] > 0)]
+    return filtered_df
+
+def remove_videos_without_brand_title(videos_df: pd.DataFrame, brand_name: str):
+    filtered_df = videos_df[videos_df['title'].str.contains(brand_name, case=False, na=False)]
+    return filtered_df
+
 def get_video_stats(video_details: videoListResponse):
     stats = video_details.items[0].statistics
     return stats

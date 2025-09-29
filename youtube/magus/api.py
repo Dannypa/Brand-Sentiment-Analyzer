@@ -5,12 +5,15 @@ import numpy as np
 import re
 from googleapiclient.discovery import build
 from models import *
+import finnhub
 
 dotenv.load_dotenv()
 
-key = os.getenv("KEY")
+youtube_key = os.getenv("YOUTUBE_KEY")
+finnhub_key = os.getenv("FINNHUB_KEY")
 
-youtube = build('youtube', 'v3', developerKey=key)
+youtube = build('youtube', 'v3', developerKey=youtube_key)
+finnhub = finnhub.Client(api_key=finnhub_key)
 
 def search_videos(query, max_results=50, start_date=None, end_date=None):
     request = youtube.search().list(
@@ -43,3 +46,14 @@ def get_video_details(video_id):
     )
     response = request.execute()
     return response
+
+def get_market_cap(brand_name):
+    lookup = finnhub.symbol_lookup(brand_name)
+    results = symbolLookup(**lookup)
+    print(results)
+    symbol = results.result[0].symbol
+
+    company_profile = finnhub.company_profile2(symbol=symbol)
+    company_profile = companyProfile(**company_profile)
+    market_cap = company_profile.marketCapitalization
+    return market_cap
