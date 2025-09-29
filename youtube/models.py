@@ -122,7 +122,7 @@ class CommentThread(BaseModel):
 class CommentListResponse(BaseModel):
     kind: str
     etag: str
-    nextPageToken: Optional[str]
+    nextPageToken: Optional[str] = None
     pageInfo: dict[str, int]
     items: list[CommentThread]
 
@@ -130,11 +130,11 @@ class CommentListResponse(BaseModel):
 # Video models
 
 class VideoStatistics(BaseModel):
-    viewCount: str
-    likeCount: Optional[str] = None
-    dislikeCount: Optional[str] = None
-    favoriteCount: str
-    commentCount: Optional[str] = None
+    viewCount: int
+    likeCount: Optional[int] = None
+    dislikeCount: Optional[int] = None
+    favoriteCount: int
+    commentCount: Optional[int] = None
 
 
 class Video(BaseModel):
