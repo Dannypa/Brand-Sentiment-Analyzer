@@ -70,7 +70,7 @@ class SearchItem(BaseModel):
 class SearchListResponse(BaseModel):
     kind: str
     etag: str
-    nextPageToken: Optional[str]
+    nextPageToken: Optional[str] = None
     prevPageToken: Optional[str] = None
     regionCode: str
     pageInfo: dict[str, int]
