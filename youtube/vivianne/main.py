@@ -98,37 +98,49 @@ def main():
         fig.update_layout(yaxis=dict(range=[-1, 1]))
         fig.show()
 
-    def plot_emoji_cloud(video_df: pd.DataFrame, comment_df: pd.DataFrame):
-        def extract_emojis(texts):
-            all_emojis = []
-            for text in texts:
-                for emo in emoji.emoji_list(str(text)):
-                    all_emojis.append(emo["emoji"])
-            return all_emojis
+ 
+    def plot_views_with_sentiment(video_df:pd.DataFrame): 
+        video_df["publishedAt"] = pd.to_datetime(video_df["publishedAt"])
+        video_df["date"] = video_df["publishedAt"].dt.date
+
+        daily = (video_df.groupby(["date", "brand"]).agg({"views": "sum", "scaled_result": "mean"}).reset_index())
+        palette = px.colors.qualitative.Safe + px.colors.qualitative.Plotly + px.colors.qualitative.Vivid
+
+        fig = go.Figure()
+
+        brands = sorted(daily["brand"].unique())
+
+        for i, brand in enumerate(brands):
+            bar_color = palette[i%len(palette)]
+            line_color = bar_color
+            brand_data = daily[daily["brand"] == brand]
+
+            fig.add_trace(go.Bar(x=brand_data["date"], y=brand_data["views"],name=f"{brand} Views", marker_color=bar_color, opacity=0.7))
+            fig.add_trace(go.Scatter(x=brand_data["date"], y=brand_data["scaled_result"], name=f"{brand} Sentiment", mode="lines+markers", line=dict(color=line_color, width=3), yaxis="y2"))
         
-        def emoji_frequency(texts):
-            return Counter(extract_emojis(texts))
+        fig.update_layout(
+            title="Daily Views (bars) and Sentiment (lines)",
+            xaxis_title="Date",
+            yaxis_title="Views",
+            yaxis2=dict(
+                title="Sentiment (-1 to 1)",
+                overlaying="y",
+                side="right",
+                range=[-1, 1],
+                showgrid=False
+            ),
+            barmode="group",
+            bargap=0.2,
+            template="plotly_white",
+            legend=dict(x=0.01, y=0.99),
+            shapes=[
+                dict(type="line", x0=0, x1=1, y0=0, y1=0,
+                    xref="paper", yref="y2",
+                    line=dict(color="black", width=1, dash="dot"))])
+        fig.show()
 
-        texts = []
-        if "video_title" in video_df.columns:
-            texts.extend(video_df["video_title"].dropna().tolist())
-        if "text" in comment_df.columns:
-            texts.extend(comment_df["text"].dropna().tolist())
-        
-        freq = emoji_frequency(texts)
-        if not freq:
-            print("No emojis found.")
-            return
 
-        wc = WordCloud(width=800, height=400, background_color="white", font_path= "C:\Windows\Fonts\seguiemj.ttf").generate_from_frequencies(freq)
-        plt.figure(figsize=(12, 6))
-        plt.imshow(wc, interpolation="bilinear")
-        plt.axis("off")
-        plt.title("Emoji cloud from Video Titles and Comments", fontsize=20)
-        plt.show()
-
-            
-    brands = ["Nike", "Shein", "McDonald's"]
+    brands = ["Nike", "Shein", "Amazon"]
     sent_ana = SentimentIntensityAnalyzer()
 
     vids_list= []
@@ -157,15 +169,8 @@ def main():
 
     #plot_daily_video_sentiment(video_df)
     #plot_daily_comment_sentiment(comment_df)
-    plot_overall_statistics(video_df)
-
-    for brand in brands:
-        brand_video_df = video_df[video_df["brand"] == brand]
-        brand_comment_df = comment_df[comment_df["brand"] == brand]
-        plot_emoji_cloud(brand_video_df, brand_comment_df)
-        os.makedirs("emoji_clouds", exist_ok=True)
-        plt.savefig(f"emoji_clouds/{brand}_emoji_cloud.png", bbox_inches='tight')
-        plt.close()
+    #plot_overall_statistics(video_df)
+    plot_views_with_sentiment(video_df)
 
 
 if __name__ == "__main__":
