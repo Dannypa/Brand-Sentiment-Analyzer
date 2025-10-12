@@ -7,7 +7,7 @@ import numpy as np
 
 def main():
     brand_names = ["coca-cola", "pfizer", "apple", "shein"]
-    video_count = 100
+    video_count = 500
 
     sentiment_dict = {}
     attention_dict = {}
@@ -15,6 +15,11 @@ def main():
     comments_dict = {}
     likes_dict = {}
     views_dict = {}
+    
+    # New data structures for individual video plotting
+    all_video_sentiments = []
+    all_video_attentions = []
+    all_video_brands = []
 
     max_comments = 0
     max_likes = 0
@@ -39,6 +44,10 @@ def main():
         comment_counts = []
         view_counts = []
         like_counts = []
+        
+        # Lists to store individual video data for this brand
+        video_sentiments_for_brand = []
+        video_attentions_for_brand = []
 
         for video_id in vid_df['video_id']:
             comment_count = vid_df.loc[vid_df['video_id'] == video_id, 'comment_count'].values[0]
@@ -60,6 +69,15 @@ def main():
                 comment_counts.append(comment_count)
                 view_counts.append(view_count)
                 like_counts.append(like_count)
+                
+                # Calculate individual video attention (normalized metrics)
+                # We'll normalize these after collecting all data
+                video_sentiments_for_brand.append((comment_score + title_score) / 2)
+                video_attentions_for_brand.append({
+                    'comment_count': comment_count,
+                    'view_count': view_count,
+                    'like_count': like_count
+                })
 
                 # print(f"Like Count: {like_count}, Comment Count: {comment_count}, View Count: {view_count}")
             except Exception as e:
@@ -72,7 +90,24 @@ def main():
         likes_dict[brand_name] = like_counts
         views_dict[brand_name] = view_counts
 
+        plt.figure(figsize=(10, 6))
+        plt.hist(comment_sentiments, bins=20, alpha=0.7, edgecolor='black')
+        plt.xlabel('Sentiment Score', fontsize=12)
+        plt.ylabel('Frequency', fontsize=12)
+        plt.title(f'Histogram of Video Sentiment Scores for {brand_name}', fontsize=14)
+        plt.grid(True, alpha=0.3)
+        plt.axvline(x=0, color='red', linestyle='--', alpha=0.7, label='Neutral')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(f"{brand_name}_sentiment_histogram.png")
+        plt.close()
+
         sentiment_dict[brand_name] = np.nanmean(comment_sentiments)
+        
+        # Add individual video data to global lists
+        all_video_sentiments.extend(video_sentiments_for_brand)
+        all_video_attentions.extend(video_attentions_for_brand)
+        all_video_brands.extend([brand_name] * len(video_sentiments_for_brand))
 
         if comment_count > max_comments:
             max_comments = comment_count
@@ -110,6 +145,52 @@ def main():
 
         attention_dict[brand_name] = attention_score
 
+    # Create scatter plot for individual videos with different colors for each brand
+    if all_video_sentiments and all_video_attentions:
+        # Normalize attention scores for individual videos
+        all_comment_counts = [video['comment_count'] for video in all_video_attentions]
+        all_view_counts = [video['view_count'] for video in all_video_attentions]
+        all_like_counts = [video['like_count'] for video in all_video_attentions]
+        
+        # Calculate normalized attention scores for each video
+        normalized_attentions = []
+        for video_metrics in all_video_attentions:
+            comment_attention = (video_metrics['comment_count'] - min_comments) / (max_comments - min_comments) if max_comments > min_comments else 0
+            like_attention = (video_metrics['like_count'] - min_likes) / (max_likes - min_likes) if max_likes > min_likes else 0
+            view_attention = (video_metrics['view_count'] - min_views) / (max_views - min_views) if max_views > min_views else 0
+            
+            # Average the three attention metrics
+            avg_attention = (comment_attention + like_attention + view_attention) / 3
+            normalized_attentions.append(avg_attention)
+        
+        # Create the plot with different colors for each brand
+        plt.figure(figsize=(12, 8))
+        colors = ['red', 'blue', 'green', 'orange']  # Colors for each brand
+        brand_color_map = {brand: colors[i] for i, brand in enumerate(brand_names)}
+        
+        for brand in brand_names:
+            # Get indices for this brand
+            brand_indices = [i for i, b in enumerate(all_video_brands) if b == brand]
+            brand_sentiments = [all_video_sentiments[i] for i in brand_indices]
+            brand_attentions = [normalized_attentions[i] for i in brand_indices]
+            
+            plt.scatter(brand_sentiments, brand_attentions, 
+                       c=brand_color_map[brand], label=brand, alpha=0.7, s=50)
+        
+        plt.xlabel('Sentiment Score', fontsize=14)
+        plt.ylabel('Attention Score', fontsize=14)
+        plt.title('Individual Video Sentiment vs Attention by Brand', fontsize=16)
+        plt.legend(title='Brand', fontsize=12)
+        plt.grid(True, alpha=0.3)
+        
+        # Add reference lines
+        plt.axhline(y=0.5, color='gray', linestyle='--', alpha=0.5, label='Avg Attention')
+        plt.axvline(x=0, color='gray', linestyle='--', alpha=0.5, label='Neutral Sentiment')
+        
+        plt.tight_layout()
+        plt.savefig("video_sentiment_attention_by_brand.png", dpi=300, bbox_inches='tight')
+        plt.close()
+
     sentiment_values = [sentiment_dict[brand] for brand in brand_names]
     attention_values = [attention_dict[brand] for brand in brand_names]
 
@@ -132,7 +213,7 @@ def main():
     plt.ylim(min(attention_values) - 0.1, max(attention_values) + 0.1)
     
     plt.tight_layout()
-    plt.show()
+    plt.savefig("output.png")
 
     # print(sentiment_dict)
 
