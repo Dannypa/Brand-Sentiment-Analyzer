@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import Optional
-from fastapi.middleware.cors import CORSMiddleware
+from vaderSentiment import SentimentIntensityAnalyzer
 
 api = FastAPI()
 
@@ -25,6 +25,7 @@ api = FastAPI()
 # )
 
 
+
 class Team(BaseModel):
     brand: Optional[str] = None
     title: Optional[str] = None
@@ -36,11 +37,21 @@ class SentimentQuery(BaseModel):
 
 class SentimentResponse(BaseModel):
     sentiment: list[list[float]] = Field(..., title="The sentiments of the texts; a list of lists of floating point numbers from -1 to 1.")
-    
+
+
+
+analyzer = SentimentIntensityAnalyzer()
+
+def process_team_vader(team: Team) -> list[float]:
+    # todo: split each text into sentences
+    result = []
+    for text in team.texts:
+        result.append(analyzer.polarity_scores(text))
+    return result
 
 
 @api.post("/get_sentiment")
 def get_sentiment(query: SentimentQuery) -> SentimentResponse:
-    result = [[0.0 for _ in team.texts] for team in query.teams]
+    result = [process_team_vader(team) for team in query.teams]
     return SentimentResponse(sentiment=result)
  
