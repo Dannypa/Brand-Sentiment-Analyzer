@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import Optional
-from vaderSentiment import SentimentIntensityAnalyzer
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 api = FastAPI()
 
@@ -46,7 +46,7 @@ def process_team_vader(team: Team) -> list[float]:
     # todo: split each text into sentences
     result = []
     for text in team.texts:
-        result.append(analyzer.polarity_scores(text))
+        result.append(analyzer.polarity_scores(text)["compound"])
     return result
 
 
