@@ -41,11 +41,12 @@ load_dotenv()
 
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = os.environ.get("PORT", 8080)
-yt_url = os.environ.get("YT_URL", "http://yt:8080/charts")
-reddit_url = os.environ.get("REDDIT_URL", "http://reddit:8080/charts")
+yt_url = os.environ.get("YT_URL", "http://yt:8080/charts/")
+reddit_url = os.environ.get("REDDIT_URL", "http://reddit:8080/charts/")
 
 def construct_chart(url: str) -> list[dcc.Graph | html.Div]:
     try:
+        print(f"{url}?brand=\"nike\"")
         data = requests.get(f"{url}?brand=\"nike\"").json()
     except Exception as e:
         print(e)

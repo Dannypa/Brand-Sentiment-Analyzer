@@ -7,6 +7,8 @@ services:
     build: ./yt-backend
     ports:
       - "10002:8080"
+    env_file:
+      - ./yt-backend/.env
   reddit:
     build: ./reddit-backend
     ports:
