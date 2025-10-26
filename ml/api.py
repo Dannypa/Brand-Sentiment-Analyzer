@@ -25,22 +25,26 @@ api = FastAPI()
 # )
 
 
-
 class Team(BaseModel):
     brand: Optional[str] = None
     title: Optional[str] = None
     topic: Optional[str] = None
     texts: list[str]
 
+
 class SentimentQuery(BaseModel):
     teams: list[Team]
 
-class SentimentResponse(BaseModel):
-    sentiment: list[list[float]] = Field(..., title="The sentiments of the texts; a list of lists of floating point numbers from -1 to 1.")
 
+class SentimentResponse(BaseModel):
+    sentiment: list[list[float]] = Field(
+        ...,
+        title="The sentiments of the texts; a list of lists of floating point numbers from -1 to 1.",
+    )
 
 
 analyzer = SentimentIntensityAnalyzer()
+
 
 def process_team_vader(team: Team) -> list[float]:
     # todo: split each text into sentences
@@ -54,4 +58,3 @@ def process_team_vader(team: Team) -> list[float]:
 def get_sentiment(query: SentimentQuery) -> SentimentResponse:
     result = [process_team_vader(team) for team in query.teams]
     return SentimentResponse(sentiment=result)
- 
