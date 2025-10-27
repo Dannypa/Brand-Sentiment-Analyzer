@@ -43,7 +43,7 @@ def get_charts(brand: str) -> list[Chart]:
 
     return charts
 
-@api.get("/charts/multibrand")
+@api.post("/charts/multibrand")
 def get_charts_multibrand(brands: list[str]) -> list[Chart]:
     
     charts = []
