@@ -1,11 +1,11 @@
-from pydantic import BaseModel, JsonValue, Field
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
 # Model for charts
 class Chart(BaseModel):
     title: Optional[str]
-    plotly_json: JsonValue
+    plotly_json: str
 
 # Models for ML service
 class Team(BaseModel):

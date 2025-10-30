@@ -159,7 +159,7 @@ class VideoListResponse(BaseModel):
 # Model for charts
 class Chart(BaseModel):
     title: Optional[str]
-    plotly_json: JsonValue
+    plotly_json: str # test json string
 
 # Models for ML service
 class Team(BaseModel):

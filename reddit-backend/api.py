@@ -1,8 +1,5 @@
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
-from pydantic import BaseModel, JsonValue
-import plotly.express as px
-import json
 import os
 from models import Chart
 from dotenv import load_dotenv
@@ -22,16 +19,15 @@ api = FastAPI()
 def get_charts(brand: str) -> list[Chart]:
 
     charts = []
-    print(f"Fetching charts for brand: {brand}")
 
     try:
         charts.extend(
             [
-                Chart(title="Sentiment histogram", plotly_json=json.loads(histogram_sentiment())),
-                Chart(title="Combined histogram", plotly_json=json.loads(histogram_combined())),
-                Chart(title="Sentiment time series", plotly_json=json.loads(time_series_sentiment())),
-                Chart(title="Views time series", plotly_json=json.loads(time_series_views())),
-                Chart(title="Combined time series", plotly_json=json.loads(time_series_combined())),
+                Chart(title="Sentiment histogram", plotly_json=histogram_sentiment()),
+                Chart(title="Combined histogram", plotly_json=histogram_combined()),
+                Chart(title="Sentiment time series", plotly_json=time_series_sentiment()),
+                Chart(title="Views time series", plotly_json=time_series_views()),
+                Chart(title="Combined time series", plotly_json=time_series_combined()),
             ]
         )
     except Exception as e:
