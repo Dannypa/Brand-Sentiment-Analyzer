@@ -2,7 +2,8 @@ import os
 import requests
 from dotenv import load_dotenv
 import streamlit as st
-import plotly.graph_objects as go
+import plotly.io as pio
+import plotly.express as px
 
 load_dotenv()
 
@@ -12,17 +13,22 @@ yt_url = os.environ.get("YT_URL", "http://yt:8080/charts/")
 reddit_url = os.environ.get("REDDIT_URL", "http://reddit:8080/charts/")
 
 
-def render_charts(url: str, brand: str="nike"):
+def render_charts(url: str, brand: str="nike", key_start: str=""):
     try:
         st.info("Attempting to fetch data...")
         data = requests.get(f"{url}?brand={brand}").json()
         st.success(f"Successfully received all the data.")
+        # st.info(data)
         for obj in data:
             if 'plotly_json' in obj and 'title' in obj:
                 st.json(obj["plotly_json"])
                 fig = go.Figure(obj["plotly_json"])
                 #st.subheader(obj.get("title", "Chart"))
                 st.plotly_chart(fig)
+            # st.info(obj)
+            fig = pio.from_json(obj["plotly_json"])
+            st.subheader(obj.get("title", "Chart"))
+            st.plotly_chart(fig, key=key_start+obj.get("title", "Chart"))
             
     except Exception as e:
         st.error(f"Something went wrong: {str(e)}")
@@ -41,7 +47,8 @@ st.sidebar.title("Some settings")
 brand = st.sidebar.text_input("Enter a brand:", placeholder="e.g. nike")
 if 'brands' not in st.session_state: #needed to preserve information between reruns, https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state
     st.session_state['brands'] = []
-if st.sidebar.button("Add"):
+
+if st.sidebar.button("Add", key="add_button"):
     if not brand:
         st.sidebar.error("It cannot be empty. Please enter a proper brand name.")
     else: 
@@ -50,7 +57,8 @@ if st.sidebar.button("Add"):
 st.sidebar.caption("Current brands:")
 for brand in st.session_state['brands']:
     st.sidebar.write(f"- {brand}")
-if st.sidebar.button("Clear all"):
+
+if st.sidebar.button("Clear all", key="clear_button"):
     st.session_state.brands.clear() #clear the list and rerun after pressing the clear all button
     st.rerun() #not working
 
@@ -63,10 +71,10 @@ st.write("This dashboard shows real-time brand sentiment analysis and insights."
 tab_youtube, tab_reddit = st.tabs(["YouTube", "Reddit"])
 with tab_youtube: #youtube subpage
     st.header("YouTube Sentiment Analysis") 
-    render_charts(yt_url, brand)
+    render_charts(yt_url, brand, key_start="youtube")
 with tab_reddit: #reddit subpage
     st.header("Reddit Sentiment Analysis")
-    render_charts(reddit_url, brand)
+    render_charts(reddit_url, brand, key_start="reddit")
 
 
 st.markdown("---")

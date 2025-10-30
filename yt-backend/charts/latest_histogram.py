@@ -1,12 +1,12 @@
 import plotly.express as px
-from pydantic import JsonValue
+import plotly.io as pio
 
-def histogram_sentiment() -> JsonValue:
-    fig = px.histogram(x=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    json_fig_str = fig.to_json()
-    return json_fig_str
+def histogram_sentiment() -> str:
+    df = px.data.tips() # returns a pandas DataFrame
+    fig = px.histogram(df, x="total_bill")
+    return pio.to_json(fig)
 
-def histogram_combined() -> JsonValue:
-    fig = px.histogram(x=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    json_fig_str = fig.to_json()
-    return json_fig_str
+def histogram_combined() -> str:
+    df = px.data.tips() # returns a pandas DataFrame
+    fig = px.histogram(df, x="total_bill")
+    return pio.to_json(fig)

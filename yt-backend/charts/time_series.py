@@ -1,17 +1,17 @@
 import plotly.express as px
-from pydantic import JsonValue
+import plotly.io as pio
 
-def time_series_sentiment() -> JsonValue:
-    fig = px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
-    json_fig_str = fig.to_json()
-    return json_fig_str
+def time_series_sentiment() -> str:
+    df = px.data.tips() # returns a pandas DataFrame
+    fig = px.histogram(df, x="total_bill")
+    return pio.to_json(fig)
 
-def time_series_views() -> JsonValue:
-    fig = px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
-    json_fig_str = fig.to_json()
-    return json_fig_str
+def time_series_views() -> str:
+    df = px.data.tips() # returns a pandas DataFrame
+    fig = px.histogram(df, x="total_bill")
+    return pio.to_json(fig)
 
-def time_series_combined() -> JsonValue:
-    fig = px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
-    json_fig_str = fig.to_json()
-    return json_fig_str
+def time_series_combined() -> str:
+    df = px.data.tips() # returns a pandas DataFrame
+    fig = px.histogram(df, x="total_bill")
+    return pio.to_json(fig)
