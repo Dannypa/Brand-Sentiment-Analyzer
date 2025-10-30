@@ -33,9 +33,9 @@ def get_charts(brand: str) -> list[Chart]:
             [
                 Chart(title="Sentiment histogram", plotly_json=histogram_sentiment()),
                 Chart(title="Combined histogram", plotly_json=histogram_combined()),
-                Chart(title="Sentiment time series", plotly_json=time_series_sentiment()),
-                Chart(title="Views time series", plotly_json=time_series_views()),
-                Chart(title="Combined time series", plotly_json=time_series_combined()),
+                Chart(title="Sentiment time series", plotly_json=time_series_sentiment([brand])),
+#                Chart(title="Views time series", plotly_json=time_series_views()),
+#                Chart(title="Combined time series", plotly_json=time_series_combined()),
             ]
         )
     except Exception as e:
