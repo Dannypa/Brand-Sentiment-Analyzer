@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from ytapi import search_videos, get_comments, get_video_details
 from services import video_to_dataframe, remove_videos_without_brand_title, remove_videos_without_comments
 import pandas as pd
-from charts.latest_histogram import histogram_sentiment, histogram_combined
+# from charts.latest_histogram import histogram_sentiment, histogram_combined
 from charts.time_series import time_series_sentiment, time_series_views, time_series_combined
 
 load_dotenv()
@@ -31,8 +31,8 @@ def get_charts(brand: str) -> list[Chart]:
     try:
         charts.extend(
             [
-                Chart(title="Sentiment histogram", plotly_json=histogram_sentiment()),
-                Chart(title="Combined histogram", plotly_json=histogram_combined()),
+                # Chart(title="Sentiment histogram", plotly_json=histogram_sentiment()),
+                # Chart(title="Combined histogram", plotly_json=histogram_combined()),
                 Chart(title="Sentiment time series", plotly_json=time_series_sentiment([brand])),
 #                Chart(title="Views time series", plotly_json=time_series_views()),
 #                Chart(title="Combined time series", plotly_json=time_series_combined()),
