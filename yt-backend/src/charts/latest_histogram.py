@@ -181,7 +181,7 @@ def get_scaled_dfs(brands: list[str], days:int):
     for brand in brands:
         brand_videos = fetch_videos(brand, days)
         # Exclude video without brand in the title, without comments
-        vid_df = video_to_dataframe(SearchListResponse(items=brand_videos))
+        vid_df = video_to_dataframe(SearchListResponse(items = brand_videos, kind="", etag= "", regionCode="", pageInfo= {"totalResults": 0, "resultsPerPage": 0}))
         vid_df = remove_videos_without_brand_title(vid_df, brand)        
         vid_df = remove_videos_without_comments(vid_df)
         brand_videos = [v for v in brand_videos if v.id.videoId in vid_df["video_id"].values]
