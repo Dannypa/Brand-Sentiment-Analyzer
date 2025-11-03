@@ -2,14 +2,15 @@ import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.io as pio
 from pydantic import JsonValue
-from services import get_scaled_dfs, remove_videos_without_brand_title, remove_videos_without_comments, video_to_dataframe, get_comment_reply_dict
+from services import remove_videos_without_brand_title, remove_videos_without_comments, video_to_dataframe, get_comment_reply_dict
 import numpy as np
 import pandas as pd
 import requests
+import json
 from datetime import datetime, timedelta, timezone
 from ytapi import get_video_details, get_comments, execute_search_query
 from models import CommentListResponse, SearchListResponse, VideoListResponse, Team, SentimentQuery, SearchQuery
-
+from ml import get_sentiment
 #kinda the estimated distribution kde line
 def histogram_sentiment(brands: list[str]) -> str:
     video_df, _ = get_scaled_dfs(brands, days = 30)
@@ -76,16 +77,11 @@ def histogram_combined(brands: list[str]) -> str:
 
 
 def fetch_sentiment(videos: list[dict]): 
-    teams = []
-    for v in videos: 
-        team = Team(brand= v.get("brand"), title=v.get("title"), texts=v.get("texts"))
-        teams.append(team)
-    sentiment_query = SentimentQuery(teams=teams)
-    r = requests.post("http://ml:8080/get_sentiment", json = sentiment_query.dict())
-    r.raise_for_status()
-
-    sentiments = r.json()
-    return sentiments["sentiment"]
+    all_sentiments = []
+    for v in videos:
+        texts = v.get("texts") or []
+        all_sentiments.append(get_sentiment(texts))
+    return all_sentiments
 
 def time_period(d: int):
     today = datetime.now(timezone.utc)
@@ -94,7 +90,7 @@ def time_period(d: int):
 
 def fetch_videos(brand: str, days: int, pages: int = 2):
     today, some_days_ago = time_period(days)
-    q = f"{brand.lower()} bad OR {brand.lower()} good OR {brand.lower()}"
+    q = f"{brand.lower()} bad OR {brand.lower()} good OR {brand.lower()} "
     page_token = None
     brand_videos = []
     for i in range(pages):
@@ -199,7 +195,15 @@ def get_scaled_dfs(brands: list[str], days:int):
     video_df = pd.DataFrame(vids_list)
     if video_df.empty:
         print("No satisfied videos to work with.")
-        return
+        video_df = pd.DataFrame(columns=[
+        "video_id", "video_title", "brand", "publishedAt",
+        "views", "likes", "comments", "sentiment_comments",
+        "sentiment_title", "avg_sentiment", "total_sentiment",
+        "scaled_result"
+    ])
+        
+        comment_df = pd.DataFrame(columns=["video_id","brand","publishedAt","comment_id","top_level_id","text","sentiment"])
+        return video_df, comment_df
 
     comment_df = pd.DataFrame(total_comments)
 

@@ -1,6 +1,6 @@
 from wordcloud import WordCloud
 import numpy as np
-from latest_histogram import get_scaled_dfs
+from charts.latest_histogram import get_scaled_dfs
 
 def word_cloud(brands: list[str]) -> np.array:
     _, comment_df = get_scaled_dfs(brands, days=30)
