@@ -78,14 +78,6 @@ def histogram_sentiment(brands: List[str]) -> str:
         fig.update_layout(title="No data available", template="plotly_white")
         return pio.to_json(fig)
 
-    palette = px.colors.qualitative.Vivid
-    for i in range(len(group_labels)):
-        hist_trace = fig.data[i * 2]
-        kde_trace = fig.data[i * 2 + 1]
-        color = palette[i % len(palette)]
-        hist_trace.marker.color = color
-        kde_trace.line.color = color
-
     fig.update_layout(title="Sentiment Distribution (estimated)", xaxis_title="Sentiment (-1 to 1)", yaxis_title="Number of items")
     fig.update_layout(template="plotly_white")
     return pio.to_json(fig)
@@ -162,13 +154,19 @@ def histogram_combined(brands: List[str]) -> str:
         fig.update_layout(title="No data available", template="plotly_white")
         return pio.to_json(fig)
 
-    palette = px.colors.qualitative.Vivid
-    for i in range(len(group_labels)):
-        hist_trace = fig.data[i * 2]
-        kde_trace = fig.data[i * 2 + 1]
-        color = palette[i % len(palette)]
-        hist_trace.marker.color = color
-        kde_trace.line.color = color
+    try:
+        palette = px.colors.qualitative.Vivid
+        for i in range(len(group_labels)):
+            hist_trace = fig.data[i * 2]
+            kde_trace = fig.data[i * 2 + 1]
+            color = palette[i % len(palette)]
+            hist_trace.marker.color = color
+            kde_trace.line.color = color
+    except Exception as e:
+        print(f"Error applying colors: {e}")
+        fig = go.Figure()
+        fig.update_layout(title="Error applying colors", template="plotly_white")
+        return pio.to_json(fig)
 
     fig.update_layout(title="Sentiment Distribution (weighted)", xaxis_title="Sentiment (-1 to 1)", yaxis_title="Number of items")
     fig.update_layout(template="plotly_white")

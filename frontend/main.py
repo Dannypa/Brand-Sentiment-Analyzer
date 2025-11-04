@@ -17,8 +17,7 @@ def render_charts(url: str, brand: str="nike", key_start: str=""):
     try:
         st.info("Attempting to fetch data...")
         data = requests.get(f"{url}?brand={brand}").json()
-        st.success(f"Successfully received all the data.")
-        # st.info(data)
+        st.info(data)
         for obj in data:
             # st.info(obj)
             fig = pio.from_json(obj["plotly_json"])

@@ -21,7 +21,9 @@ def get_charts(brand: str) -> list[Chart]:
     charts = []
 
     try:
-        brands = [brand]
+        # TODO: for now, seperate brands by commas. either implement something later or let it be
+        brands = brand.split(',')
+        print("List of brands:", brands)
         charts.extend(
             [
                 Chart(title="Sentiment histogram", plotly_json=histogram_sentiment(brands)),
