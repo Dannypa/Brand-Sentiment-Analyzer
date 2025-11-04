@@ -13,6 +13,8 @@ services:
     build: ./reddit-backend
     ports:
       - "10003:8080"
+    env_file:
+      - ./reddit-backend/.env
   frontend:
     build: ./frontend
     ports:
