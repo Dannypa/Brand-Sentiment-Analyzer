@@ -162,7 +162,7 @@ def fetch_videos(brand: str, days: int, pages: int = 2):
     for i in range(pages):
         query = SearchQuery(
             q=q,
-            max_results=10,
+            max_results=50,
             published_after=some_days_ago,
             published_before=today,
             page_token=page_token
