@@ -1,87 +1,153 @@
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.io as pio
-from pydantic import JsonValue
-from services import remove_videos_without_brand_title, remove_videos_without_comments, video_to_dataframe, get_comment_reply_dict
+import plotly.graph_objects as go
 import numpy as np
+from services import get_comment_reply_dict
 import pandas as pd
-import requests
-import json
 from datetime import datetime, timedelta, timezone
 from ytapi import get_video_details, get_comments, execute_search_query
-from models import CommentListResponse, SearchListResponse, VideoListResponse, Team, SentimentQuery, SearchQuery
+from models import CommentListResponse, SearchListResponse, VideoListResponse, SearchQuery
 from ml import get_sentiment
+
 #kinda the estimated distribution kde line
 def histogram_sentiment(brands: list[str]) -> str:
     video_df, _ = get_scaled_dfs(brands, days = 30)
+    print(video_df)
+
     if video_df is None or video_df.empty:
-        raise ValueError("No data available.")
-    brands_sort = sorted(video_df["brand"].unique())
-    hist_data = [video_df[video_df["brand"] == b]["avg_sentiment"].tolist() for b in brands_sort]
-    group_labels = brands_sort
-    palette = px.colors.qualitative.Vivid
+        fig = go.Figure()
+        fig.update_layout(
+            title="No data available",
+            xaxis_title="Sentiment",
+            yaxis_title="Number of videos",
+            template="plotly_white"
+        )
+        return pio.to_json(fig)
+    else:
+        brands_sort = sorted(video_df["brand"].unique())
+        hist_data = []
+        group_labels = []
+        for b in brands_sort:
+            data = video_df[video_df["brand"] == b]["avg_sentiment"].fillna(0).tolist()
+            if not data or np.all(data == 0):  
+                print(f"No avg_sentiment data for brand {b}")
+                data = [0,0.0001]
+            data = np.clip(data, -1, 1)
+            hist_data.append(data)
+            group_labels.append(b)
 
-    fig = ff.create_distplot(hist_data,
-                             group_labels, 
-                             curve_type='kde', 
-                             bin_size = 0.1,
-                             show_rug = False)
-    
-    for i, trace in enumerate(fig.data):
-        if trace.type == "scatter": 
-            trace.line.color = palette[i%len(palette)]
-        elif trace.type == "histogram": 
-            trace.marker.color = palette[i%len(palette)]
+        if not hist_data or not group_labels: 
+            fig = go.Figure()
+            fig.update_layout(
+                title="No data available",
+                xaxis_title="Sentiment",
+                yaxis_title="Number of videos",
+                template="plotly_white"
+            )
+            return pio.to_json(fig)
+        else:
+            try: 
+                fig = ff.create_distplot(hist_data,
+                                    group_labels, 
+                                    curve_type='kde', 
+                                    bin_size = 0.1,
+                                    show_rug = False)
+            except Exception as e:
+                print(f"Error: {e}")
+                fig = go.Figure()
+                fig.update_layout(
+                    title="No data available",
+                    xaxis_title="Sentiment",
+                    yaxis_title="Number of videos",
+                    template="plotly_white"
+                )
+                return pio.to_json(fig)
+            palette = px.colors.qualitative.Vivid
+            for i in range(len(group_labels)):
+                hist_trace = fig.data[i*2]  
+                kde_trace = fig.data[i*2 + 1]  
+                color = palette[i % len(palette)]
 
-    fig.update_layout(title="Sentiment Distribution (estimated)",
-        xaxis_title="Sentiment (-1 to 1)",
-        yaxis_title="Number of videos")
-    
-    fig.update_layout(template = 'plotly_white')
+                hist_trace.marker.color = color
+                kde_trace.line.color = color
 
-    json_fig_str = pio.to_json(fig)
-    if json_fig_str is None:
-        raise ValueError("Failed to produce a plot json.")
-    return json_fig_str
+            fig.update_layout(title="Sentiment Distribution (estimated)",
+                xaxis_title="Sentiment (-1 to 1)",
+                yaxis_title="Number of videos")
+            
+            fig.update_layout(template = 'plotly_white')
+
+            return pio.to_json(fig)
 
 def histogram_combined(brands: list[str]) -> str:
     video_df, _ = get_scaled_dfs(brands, days = 30)
+    print(video_df)
+
     if video_df is None or video_df.empty:
-        raise ValueError("No data available.")
-    brands_sort = sorted(video_df["brand"].unique())
-    hist_data = [video_df[video_df["brand"] == b]["scaled_result"].tolist() for b in brands_sort]
-    group_labels = brands_sort
-    palette = px.colors.qualitative.Vivid
+        fig = go.Figure()
+        fig.update_layout(
+            title="No data available",
+            xaxis_title="Sentiment",
+            yaxis_title="Number of videos",
+            template="plotly_white"
+        )
+        return pio.to_json(fig)
+    else:
+        brands_sort = sorted(video_df["brand"].unique())
+        hist_data = []
+        group_labels = []
+        for b in brands_sort:
+            data = video_df[video_df["brand"] == b]["scaled_result"].fillna(0).tolist()
+            if not data or np.all(data == 0):  
+                print(f"No avg_sentiment data for brand {b}")
+                data = [0,0.0001]
+            data = np.clip(data, -1, 1)
+            hist_data.append(data)
+            group_labels.append(b)
 
-    fig = ff.create_distplot(hist_data,
-                             group_labels, 
-                             curve_type='kde',
-                             bin_size = 0.1,
-                             show_rug = False)    
-    for i, trace in enumerate(fig.data):
-        if trace.type == "scatter": 
-            trace.line.color = palette[i%len(palette)]
-        elif trace.type == "histogram": 
-            trace.marker.color = palette[i%len(palette)]
+        if not hist_data or not group_labels: 
+            fig = go.Figure()
+            fig.update_layout(
+                title="No data available",
+                xaxis_title="Sentiment",
+                yaxis_title="Number of videos",
+                template="plotly_white"
+            )
+            return pio.to_json(fig)
+        else:
+            try: 
+                fig = ff.create_distplot(hist_data,
+                                    group_labels, 
+                                    curve_type='kde', 
+                                    bin_size = 0.1,
+                                    show_rug = False)
+            except Exception as e:
+                print(f"Error: {e}")
+                fig = go.Figure()
+                fig.update_layout(
+                    title="No data available",
+                    xaxis_title="Sentiment",
+                    yaxis_title="Number of videos",
+                    template="plotly_white"
+                )
+                return pio.to_json(fig)
+            palette = px.colors.qualitative.Vivid
+            for i in range(len(group_labels)):
+                hist_trace = fig.data[i*2]  
+                kde_trace = fig.data[i*2 + 1]  
+                color = palette[i % len(palette)]
 
-    fig.update_layout(title="Sentiment Distribution (estimated, weighted by attention)",
-        xaxis_title="Sentiment (-1 to 1)",
-        yaxis_title="Number of videos")
-    
-    fig.update_layout(template = 'plotly_white')
-    
-    json_fig_str = pio.to_json(fig)
-    if json_fig_str is None:
-        raise ValueError("Failed to produce a plot json.")
-    return json_fig_str
-
-
-def fetch_sentiment(videos: list[dict]): 
-    all_sentiments = []
-    for v in videos:
-        texts = v.get("texts") or []
-        all_sentiments.append(get_sentiment(texts))
-    return all_sentiments
+                hist_trace.marker.color = color
+                kde_trace.line.color = color
+  
+            fig.update_layout(title="Sentiment Distribution (estimated, weighted by attention)",
+            xaxis_title="Sentiment (-1 to 1)",
+            yaxis_title="Number of videos")
+        
+            fig.update_layout(template = 'plotly_white')
+            
+            return pio.to_json(fig)
 
 def time_period(d: int):
     today = datetime.now(timezone.utc)
@@ -96,7 +162,7 @@ def fetch_videos(brand: str, days: int, pages: int = 2):
     for i in range(pages):
         query = SearchQuery(
             q=q,
-            max_results=50,
+            max_results=10,
             published_after=some_days_ago,
             published_before=today,
             page_token=page_token
@@ -117,7 +183,7 @@ def fetch_videos(brand: str, days: int, pages: int = 2):
         if not page_token:
             break
 
-    print(f"Fetched {len(brand_videos)} videos for {brand}.")
+    print(f"Fetched {len(brand_videos)} videos for {brand}. brand {brand_videos[0].snippet.title.lower()}")
     return brand_videos 
 
 
@@ -126,28 +192,47 @@ def process_video(vid, brand: str, max_comments: int = 50):
     video_title = vid.snippet.title
     video_publish = vid.snippet.publishedAt
 
-    details = get_video_details(video_id)
-    details = VideoListResponse(**details)
-    stats = details.items[0].statistics
-
-    views = int(stats.viewCount or 0)
-    likes = int(stats.likeCount or 0)
-    comments_count = int(stats.commentCount or 0)
-
-    vid_comments = get_comments(video_id, max_results=max_comments)
-    vid_comments = CommentListResponse(**vid_comments)
-    comment_reply_dict = get_comment_reply_dict(vid_comments)
-
+    views = 0
+    likes = 0
+    comments_count = 0
+    try:
+        details = get_video_details(video_id)
+        details = VideoListResponse(**details)
+        stats = details.items[0].statistics
+        views = int(stats.viewCount or 0)
+        likes = int(stats.likeCount or 0)
+        comments_count = int(stats.commentCount or 0)
+    except Exception as e:
+        print(f"error in stats, video {video_id}: {e}")
+    
     comment_texts = []
-    for top_level, replies in comment_reply_dict.items():
-        comment_texts.append(top_level)
-        comment_texts.extend(replies)
+    if comments_count > 0:
+        try: 
+            vid_comments_raw = get_comments(video_id, max_results=max_comments)
+            if isinstance(vid_comments_raw, CommentListResponse):
+                vid_comments = vid_comments_raw
+            else:
+                vid_comments = CommentListResponse(**vid_comments_raw)
 
-    teams = [{"brand": brand, "title": video_title, "texts": comment_texts}]
-    sentiments = fetch_sentiment(teams)
+            comment_reply_dict = get_comment_reply_dict(vid_comments)
+            for top_level, replies in comment_reply_dict.items():
+                comment_texts.append(top_level)
+                comment_texts.extend(replies)
+        except Exception as e:
+            print(f"error in comments, video {video_id}: {e}")
 
-    title_sent = sentiments[0][0] if sentiments[0] else 0
-    avg_comment_sent = sum(sentiments[0][1:]) / len(sentiments[0][1:]) if len(sentiments[0]) > 1 else 0
+    title_sent = 0.0
+    avg_comment_sent = 0.0
+    avg_sentiment = 0.0
+    total_sent = 0.0
+    try: 
+        if video_title:
+            title_sent = get_sentiment([video_title])[0]
+        if comment_texts:
+            comment_sent_list = get_sentiment(comment_texts)
+            avg_comment_sent = sum(comment_sent_list) / len(comment_sent_list) if comment_sent_list else 0
+    except Exception as e:
+        print(f"sentiments, video {video_id}: {e}")
 
     avg_sentiment = (title_sent + avg_comment_sent)/2
 
@@ -170,7 +255,6 @@ def process_video(vid, brand: str, max_comments: int = 50):
     }
 
     comments_df = [{"video_id": video_id, "brand": brand, "text": t} for t in comment_texts]
-
     return video_data, comments_df
 
 
@@ -179,39 +263,48 @@ def get_scaled_dfs(brands: list[str], days:int):
     total_comments = []
     
     for brand in brands:
+        brand_rows = []
         brand_videos = fetch_videos(brand, days)
-        # Exclude video without brand in the title, without comments
-        vid_df = video_to_dataframe(SearchListResponse(items = brand_videos, kind="", etag= "", regionCode="", pageInfo= {"totalResults": 0, "resultsPerPage": 0}))
-        vid_df = remove_videos_without_brand_title(vid_df, brand)        
-        vid_df = remove_videos_without_comments(vid_df)
-        brand_videos = [v for v in brand_videos if v.id.videoId in vid_df["video_id"].values]
-        for vid in brand_videos:
-            video_data, comments = process_video(vid, brand,max_comments = 50)
-            if video_data is None:
-                continue
-            vids_list.append(video_data)
-            total_comments.extend(comments)
-    
-    video_df = pd.DataFrame(vids_list)
-    if video_df.empty:
-        print("No satisfied videos to work with.")
-        video_df = pd.DataFrame(columns=[
-        "video_id", "video_title", "brand", "publishedAt",
-        "views", "likes", "comments", "sentiment_comments",
-        "sentiment_title", "avg_sentiment", "total_sentiment",
-        "scaled_result"
-    ])
+        if not brand_videos:
+            print(f"No videos found for {brand}")
+        else:
+            # Exclude video without brand in the title
+            for vid in brand_videos:
+                title = vid.snippet.title.lower()
+                if brand.lower() not in title:
+                    continue
+                try: 
+                    video_data, comments = process_video(vid, brand)
+                except Exception as e:
+                    print(f"error in process video, video {vid.id.videoId}: {e}")
+                    continue
+                brand_rows.append(video_data)
+                total_comments.extend(comments)
+        if not brand_rows:
+            brand_rows.append({
+                "video_id": None,
+                "video_title": None,
+                "brand": brand,
+                "publishedAt": None,
+                "views": 0,
+                "likes": 0,
+                "comments": 0,
+                "sentiment_comments": 0.0,
+                "sentiment_title": 0.0,
+                "avg_sentiment": 0.0,
+                "total_sentiment": 0.0,
+                "scaled_result": 0.0
+            })
+        vids_list.extend(brand_rows)
         
-        comment_df = pd.DataFrame(columns=["video_id","brand","publishedAt","comment_id","top_level_id","text","sentiment"])
-        return video_df, comment_df
+    video_df = pd.DataFrame(vids_list)
 
     comment_df = pd.DataFrame(total_comments)
-
     if comment_df.empty:
-        comment_df = pd.DataFrame(columns=["video_id","brand","publishedAt","comment_id","top_level_id","text","sentiment"])
-    
+        comment_df = pd.DataFrame(columns=["video_id", "brand", "text"])
+    comment_df = comment_df.drop_duplicates(subset=["video_id", "text"])
+
     video_df = video_df.drop_duplicates(["video_id", "brand"])
-    comment_df = comment_df.drop_duplicates(["comment_id", "brand"])
     min_sent = video_df["total_sentiment"].min()
     max_sent = video_df["total_sentiment"].max()
     if min_sent == max_sent:
