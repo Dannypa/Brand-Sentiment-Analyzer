@@ -7,8 +7,8 @@ services:
     build: ./yt-backend
     ports:
       - "10002:8080"
-    env_file:
-      - ./yt-backend/.env
+    #env_file:
+      #- ./yt-backend/.env
   reddit:
     build: ./reddit-backend
     ports:
@@ -18,3 +18,7 @@ services:
     ports:
       - "3000:8080"
       - "3001:8501"
+
+    environment:
+      - YT_URL=http://yt:8080/charts
+      - REDDIT_URL=http://reddit:8080/charts
