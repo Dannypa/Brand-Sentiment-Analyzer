@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, JsonValue
+import io
 import plotly.express as px
 import json
 import requests
@@ -50,3 +52,11 @@ def get_charts_multibrand(brands: list[str]) -> list[Chart]:
     charts = []
 
     return charts
+
+@api.get("/charts/wordcloud")
+def get_word_cloud(brand: str):
+    image = word_cloud([brand])
+    img_bytes = io.BytesIO()
+    image.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
+    return StreamingResponse(img_bytes, media_type="image/png")

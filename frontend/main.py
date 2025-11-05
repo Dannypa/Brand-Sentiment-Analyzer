@@ -16,6 +16,10 @@ reddit_url = os.environ.get("REDDIT_URL", "http://reddit:8080/charts/")
 def render_charts(url: str, brand: str="nike", key_start: str=""):
     try:
         st.info("Attempting to fetch data...")
+        st.info(f"Requesting: {url}wordcloud?brand={brand}")
+        image = requests.get(f"{url}wordcloud?brand={brand}").content
+        st.image(image, caption="Word Cloud")
+
         data = requests.get(f"{url}?brand={brand}").json()
         st.info(data)
         for obj in data:
