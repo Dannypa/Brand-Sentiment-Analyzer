@@ -26,7 +26,7 @@ def get_charts(brand: str) -> list[Chart]:
         print("List of brands:", brands)
         charts.extend(
             [
-                # Chart(title="Sentiment histogram", plotly_json=histogram_sentiment(brands)),
+                Chart(title="Sentiment histogram", plotly_json=histogram_sentiment(brands)),
                 # Chart(title="Combined histogram", plotly_json=histogram_combined(brands)),
                 Chart(title="Sentiment time series", plotly_json=time_series_sentiment(brands)),
                 # Chart(title="Views time series", plotly_json=time_series_views(brands)),

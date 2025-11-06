@@ -31,7 +31,7 @@ def time_series_sentiment(brands: List[str], days: int = 30) -> str:
 
     for brand in brands:
         try:
-            df = fetch_keyword_search(reddit, ["all"], [brand], time_filter="month", limit_per_sub=200)
+            df = fetch_keyword_search(reddit, ["all"], [brand], time_filter="month", limit_per_sub=5)
         except Exception as e:
             print(f"Error fetching reddit data for {brand}: {e}")
             df = pd.DataFrame()
