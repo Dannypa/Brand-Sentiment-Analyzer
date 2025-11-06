@@ -25,11 +25,6 @@ def render_charts(url: str, brands: list[str], key_start: str=""):
         st.success(f"Successfully received all the data.")
         # st.info(data)
         for obj in data:
-            if 'plotly_json' in obj and 'title' in obj:
-                st.json(obj["plotly_json"])
-                fig = go.Figure(obj["plotly_json"])
-                #st.subheader(obj.get("title", "Chart"))
-                st.plotly_chart(fig)
             # st.info(obj)
             fig = pio.from_json(obj["plotly_json"])
             st.subheader(obj.get("title", "Chart"))
