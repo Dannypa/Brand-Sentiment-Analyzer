@@ -16,12 +16,14 @@ def render_charts(url: str, brands: list[str], key_start: str=""):
     try:
         st.info("Attempting to fetch data...")
         
-        brand_str = ",".join(brands)
-        params = {"brand": brand_str}
+        # brand_str = ",".join(brands) #add this line if the backends accept comma-separated in a single parameter
+        params = {"brand": brands} #the backends accept repeated query keys
+        # st.write(params)
         data = requests.get(url, params=params).json()
+        st.write(data)
+
         st.success(f"Successfully received all the data.")
         # st.info(data)
-        st.write(data)
         for obj in data:
             if 'plotly_json' in obj and 'title' in obj:
                 st.json(obj["plotly_json"])
