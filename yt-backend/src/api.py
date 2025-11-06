@@ -32,8 +32,7 @@ api = FastAPI()
 # print(requests.get("http://localhost:10001/docs").json())
 
 
-@api.get("/charts")
-def get_charts(brand: str) -> list[Chart]:
+def get_charts_inner(brands: list[str]) -> list[Chart]:
     charts = []
 
     try:
@@ -41,10 +40,13 @@ def get_charts(brand: str) -> list[Chart]:
             [
                 Chart(
                     title="Sentiment histogram",
-                    plotly_json=histogram_sentiment([brand]),
+                    plotly_json=histogram_sentiment(brands),
                 ),
                 # Chart(title="Combined histogram", plotly_json=histogram_combined([brand])),
-                # Chart(title="Sentiment time series", plotly_json=time_series_sentiment([brand])),
+                Chart(
+                    title="Sentiment time series",
+                    plotly_json=time_series_sentiment(brands),
+                ),
                 # Chart(title="Views time series", plotly_json=time_series_views([brand])),
                 # Chart(title="Combined time series", plotly_json=time_series_combined([brand])),
             ]
@@ -55,11 +57,14 @@ def get_charts(brand: str) -> list[Chart]:
     return charts
 
 
+@api.get("/charts")
+def get_charts(brand: str) -> list[Chart]:
+    return get_charts_inner([brand])
+
+
 @api.post("/charts/multibrand")
 def get_charts_multibrand(brands: list[str]) -> list[Chart]:
-    charts = []
-
-    return charts
+    return get_charts_inner(brands)
 
 
 @api.get("/charts/wordcloud")
