@@ -9,6 +9,14 @@ services:
       - "10002:8080"
     env_file:
       - ./yt-backend/.env
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=data
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_PORT=5432
   reddit:
     build: ./reddit-backend
     ports:
@@ -20,3 +28,18 @@ services:
     ports:
       - "3000:8080"
       - "3001:8501"
+  db:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: data
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres_data:

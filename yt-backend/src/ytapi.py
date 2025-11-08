@@ -6,7 +6,7 @@ from models import (
     VideoListResponse,
     SearchQuery,
     CommentThreadRetrieveQuery,
-    CommentListResponse
+    CommentListResponse,
 )
 
 dotenv.load_dotenv()
@@ -55,9 +55,7 @@ def execute_search_query_pydantic(q: SearchQuery) -> SearchListResponse:
 
 
 def search_videos(query, max_results=50, start_date=None, end_date=None) -> SearchListResponse:
-    return execute_search_query_pydantic(
-        SearchQuery(q=query, max_results=max_results, published_after=start_date, published_before=end_date)
-    )
+    return execute_search_query_pydantic(SearchQuery(q=query, max_results=max_results, published_after=start_date, published_before=end_date)) 
 
 # Comment-related functions
 def execute_comment_query(

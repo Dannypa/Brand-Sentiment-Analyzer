@@ -16,12 +16,13 @@ reddit_url = os.environ.get("REDDIT_URL", "http://reddit:8080/charts/")
 def render_charts(url: str, brand: str="nike", key_start: str=""):
     try:
         st.info("Attempting to fetch data...")
-        st.info(f"Requesting: {url}wordcloud?brand={brand}")
-        image = requests.get(f"{url}wordcloud?brand={brand}").content
-        st.image(image, caption="Word Cloud")
+
+        # st.info(f"Requesting: {url}wordcloud?brand={brand}")
+        # image = requests.get(f"{url}wordcloud?brand={brand}").content
+        # st.image(image, caption="Word Cloud")
 
         data = requests.get(f"{url}?brand={brand}").json()
-        st.info(data)
+        # st.info(data)
         for obj in data:
             # st.info(obj)
             fig = pio.from_json(obj["plotly_json"])
@@ -70,9 +71,9 @@ tab_youtube, tab_reddit = st.tabs(["YouTube", "Reddit"])
 with tab_youtube: #youtube subpage
     st.header("YouTube Sentiment Analysis") 
     render_charts(yt_url, brand, key_start="youtube")
-with tab_reddit: #reddit subpage
-    st.header("Reddit Sentiment Analysis")
-    render_charts(reddit_url, brand, key_start="reddit")
+# with tab_reddit: #reddit subpage
+#     st.header("Reddit Sentiment Analysis")
+#     render_charts(reddit_url, brand, key_start="reddit")
 
 
 st.markdown("---")

@@ -9,9 +9,10 @@ from datetime import datetime, timedelta, timezone
 from ytapi import get_video_details, get_comments, execute_search_query
 from models import CommentListResponse, SearchListResponse, VideoListResponse, SearchQuery
 from ml import get_sentiment
+import psycopg2
 
 #kinda the estimated distribution kde line
-def histogram_sentiment(brands: list[str]) -> str:
+def histogram_sentiment(brands: list[str], conn: psycopg2) -> str:
     video_df, _ = get_scaled_dfs(brands, days = 30)
     print(video_df)
 

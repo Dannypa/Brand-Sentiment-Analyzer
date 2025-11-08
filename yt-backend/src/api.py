@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.exceptions import HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, JsonValue
@@ -14,8 +14,11 @@ from ytapi import search_videos, get_comments, get_video_details
 from services import video_to_dataframe, remove_videos_without_brand_title, remove_videos_without_comments
 import pandas as pd
 from charts.latest_histogram import histogram_sentiment, histogram_combined
-from charts.time_series import time_series_sentiment, time_series_views, time_series_combined
+from charts.time_series import time_series_sentiment
 from charts.word_cloud import word_cloud
+from charts.hist import hist
+import psycopg2
+from psycopg2 import pool
 
 load_dotenv()
 
@@ -23,20 +26,49 @@ load_dotenv()
 ML_URL = os.environ.get("ML_URL")  # todo: env var
 
 api = FastAPI()
+db_pool = None
 # print(requests.get("http://localhost:10001/docs").json())
+
+@api.on_event("startup")
+def startup():
+    global db_pool
+    db_pool = psycopg2.pool.SimpleConnectionPool(
+        1,
+        10,
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        database=os.getenv("DB_NAME"),
+    )
+
+@api.on_event("shutdown")
+def shutdown():
+    global db_pool
+    if db_pool:
+        db_pool.closeall()
+
+def get_db_connection():
+    global db_pool
+    try:
+        conn = db_pool.getconn()
+        yield conn
+    finally:
+        db_pool.putconn(conn)
 
 
 @api.get("/charts")
-def get_charts(brand: str) -> list[Chart]:
+def get_charts(brand: str, conn=Depends(get_db_connection)) -> list[Chart]:
 
     charts = []
 
     try:
         charts.extend(
             [
-                Chart(title="Sentiment histogram", plotly_json=histogram_sentiment([brand])),
+                Chart(title="Sentiment histogram", plotly_json=hist([brand], conn)),
+                # Chart(title="Sentiment histogram", plotly_json=histogram_sentiment([brand], conn)),
                 #Chart(title="Combined histogram", plotly_json=histogram_combined([brand])),
-                #Chart(title="Sentiment time series", plotly_json=time_series_sentiment([brand])),
+                # Chart(title="Sentiment time series", plotly_json=time_series_sentiment([brand])),
                 #Chart(title="Views time series", plotly_json=time_series_views([brand])),
                 #Chart(title="Combined time series", plotly_json=time_series_combined([brand])),
             ]
