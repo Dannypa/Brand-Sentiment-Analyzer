@@ -19,6 +19,7 @@ def query_youtube_api(url: str) -> dict:
         headers={"Accept": "application/json"},
     )
     if resp.status_code != 200:
+        print(f"Error response from YouTube API: {resp.status_code} - {resp.text}")
         raise ValueError(f"Request to the api failed. Code {resp.status_code}. Error: {resp.text}")
     return resp.json()
 

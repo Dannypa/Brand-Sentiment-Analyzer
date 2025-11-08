@@ -77,7 +77,7 @@ def get_db_connection():
         db_pool.putconn(conn)
 
 
-def get_charts_inner(brands: list[str]) -> list[Chart]:
+def get_charts_inner(brands: list[str], conn: psycopg2) -> list[Chart]:
     charts = []
 
     try:
@@ -85,13 +85,13 @@ def get_charts_inner(brands: list[str]) -> list[Chart]:
             [
                 Chart(
                     title="Sentiment histogram",
-                    plotly_json=histogram_sentiment(brands),
+                    plotly_json=hist(brands, conn),
                 ),
                 # Chart(title="Combined histogram", plotly_json=histogram_combined([brand])),
-                Chart(
-                    title="Sentiment time series",
-                    plotly_json=time_series_sentiment(brands),
-                ),
+                # Chart(
+                #     title="Sentiment time series",
+                #     plotly_json=time_series_sentiment(brands),
+                # ),
                 # Chart(title="Views time series", plotly_json=time_series_views([brand])),
                 # Chart(title="Combined time series", plotly_json=time_series_combined([brand])),
             ]
@@ -103,13 +103,13 @@ def get_charts_inner(brands: list[str]) -> list[Chart]:
 
 
 @api.get("/charts")
-def get_charts(brand: str) -> list[Chart]:
-    return get_charts_inner([brand])
+def get_charts(brand: str, conn=Depends(get_db_connection)) -> list[Chart]:
+    return get_charts_inner([brand], conn)
 
 
 @api.post("/charts/multibrand")
-def get_charts_multibrand(brands: list[str]) -> list[Chart]:
-    return get_charts_inner(brands)
+def get_charts_multibrand(brands: list[str], conn=Depends(get_db_connection)) -> list[Chart]:
+    return get_charts_inner(brands, conn)
 
 
 @api.get("/charts/wordcloud")

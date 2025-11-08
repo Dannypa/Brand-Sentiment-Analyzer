@@ -3,15 +3,20 @@ from datetime import datetime
 from models import VideoCache
 
 def search_video_database(conn: psycopg2, query: str, startdate: datetime, enddate: datetime) -> list[VideoCache]:
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT * FROM youtube_cache
-            WHERE query = %s
-            AND datetime >= %s
-            AND datetime <= %s
-        """, (query, startdate, enddate))
-        columns = [desc[0] for desc in cur.description]
-        return [VideoCache(**dict(zip(columns, row))) for row in cur.fetchall()]
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT * FROM youtube_cache
+                WHERE query = %s
+                AND datetime >= %s
+                AND datetime <= %s
+            """, (query, startdate, enddate))
+            columns = [desc[0] for desc in cur.description]
+            rows = cur.fetchall()
+    except Exception as e:
+        print(f"Error querying video database: {e}")
+        return [] 
+    return [VideoCache(**dict(zip(columns, row))) for row in rows]
     
 def insert_video_cache(conn: psycopg2, video_cache: list[VideoCache]):
     with conn.cursor() as cur:
