@@ -1,6 +1,7 @@
+from typing import Optional
+
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
-from typing import Optional
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 api = FastAPI()
@@ -42,6 +43,8 @@ class SentimentResponse(BaseModel):
         title="The sentiments of the texts; a list of lists of floating point numbers from -1 to 1.",
     )
 
+    method: str
+
 
 analyzer = SentimentIntensityAnalyzer()
 
@@ -57,4 +60,4 @@ def process_team_vader(team: Team) -> list[float]:
 @api.post("/get_sentiment")
 def get_sentiment(query: SentimentQuery) -> SentimentResponse:
     result = [process_team_vader(team) for team in query.teams]
-    return SentimentResponse(sentiment=result)
+    return SentimentResponse(sentiment=result, method="vader")

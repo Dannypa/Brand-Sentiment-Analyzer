@@ -56,7 +56,7 @@ def histogram_sentiment(brands: List[str]) -> str:
                         texts.append(str(c))
 
         sentiments = get_sentiment(texts) if texts else []
-        hist_data.append(sentiments.to_list())
+        hist_data.append(sentiments)
         group_labels.append(brand)
 
     # If nothing to plot, return empty figure
