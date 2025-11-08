@@ -24,7 +24,7 @@ def word_cloud(brands: list[str]) -> Image:
             except Exception as e:
                 pass
                 # print(f"Error fetching comments for video {video_id}: {e} Skipping this video.")
-        text = " ".join(all_comments)
+        text = " ".join(all_comments).lower()
 
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
     return wordcloud.to_image()
