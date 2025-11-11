@@ -113,22 +113,22 @@ def get_all_video_data(conn: psycopg2, query: str, max_results: int, start: date
                         continue
                     comments = get_comments(video_id)
                     top_comments = comments_to_list_of_top_level(comments)
-                    comment_count = video_stats.commentCount
-                    like_count = video_stats.likeCount
+                    comment_count = video_stats.commentCount or 0
+                    like_count = video_stats.likeCount or 0
                     comments_sentiments = get_sentiment(top_comments)
 
                     if not comments_sentiments or len(comments_sentiments) == 0:
                         continue
 
                     avg_comment_sentiment = sum(comments_sentiments) / len(comments_sentiments) if len(comments_sentiments) != 0 else 0
-                    title_sentiment = get_sentiment([item.snippet.title])[0]
+                    title_sentiment = get_sentiment([item.snippet.title])[0] or 0.0
                     avg_sentiment = (avg_comment_sentiment + title_sentiment) / 2
                     weighted_sentiment = (avg_comment_sentiment * comment_count * 0.988) + (title_sentiment * like_count * 0.012)
                     video_data.append(VideoCache(
                         video_id=video_id,
                         query=query,
                         datetime=item.snippet.publishedAt,
-                        views=video_stats.viewCount,
+                        views=video_stats.viewCount or 0,
                         likes=video_stats.likeCount,
                         comments=video_stats.commentCount,
                         avg_comment_sentiment=avg_comment_sentiment,

@@ -1,6 +1,5 @@
 from wordcloud import WordCloud
 import numpy as np
-from charts.latest_histogram import get_scaled_dfs
 from services import video_to_dataframe, remove_videos_without_brand_title, remove_videos_without_comments
 from ytapi import search_videos, get_comments, get_video_details
 import pandas as pd
