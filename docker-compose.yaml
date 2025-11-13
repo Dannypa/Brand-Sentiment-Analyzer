@@ -23,6 +23,14 @@ services:
       - "10003:8080"
     env_file:
       - ./reddit-backend/.env
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=data
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_PORT=5432
   frontend:
     build: ./frontend
     ports:

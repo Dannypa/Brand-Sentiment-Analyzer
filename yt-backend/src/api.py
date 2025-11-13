@@ -1,27 +1,16 @@
 from fastapi import FastAPI, Depends
 import io
-import json
 import os
-from typing import Optional
 
 import pandas as pd
-import plotly.express as px
-import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, JsonValue
 import io
-import plotly.express as px
-import json
-import requests
-from typing import Optional
 import os
 from models import Chart
 from dotenv import load_dotenv
-from ytapi import search_videos, get_comments, get_video_details
-from services import video_to_dataframe, remove_videos_without_brand_title, remove_videos_without_comments
 import pandas as pd
 from charts.latest_histogram import histogram_sentiment, histogram_combined
 from charts.time_series import time_series_sentiment
@@ -33,12 +22,6 @@ from charts.hist import hist
 import psycopg2
 from psycopg2 import pool
 from models import Chart
-from services import (
-    remove_videos_without_brand_title,
-    remove_videos_without_comments,
-    video_to_dataframe,
-)
-from ytapi import get_comments, get_video_details, search_videos
 
 load_dotenv()
 
@@ -85,13 +68,13 @@ def get_charts_inner(brands: list[str], conn: psycopg2) -> list[Chart]:
             [
                 Chart(
                     title="Sentiment histogram",
-                    plotly_json=hist(brands, conn),
+                    plotly_json=histogram_sentiment(brands, conn),
                 ),
                 # Chart(title="Combined histogram", plotly_json=histogram_combined([brand])),
-                # Chart(
-                #     title="Sentiment time series",
-                #     plotly_json=time_series_sentiment(brands),
-                # ),
+                Chart(
+                    title="Sentiment over time",
+                    plotly_json=time_series_sentiment(brands, conn),
+                ),
                 # Chart(title="Views time series", plotly_json=time_series_views([brand])),
                 # Chart(title="Combined time series", plotly_json=time_series_combined([brand])),
             ]
