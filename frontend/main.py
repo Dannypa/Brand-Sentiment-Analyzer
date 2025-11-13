@@ -22,6 +22,10 @@ def render_charts(url: str, brands: list[str], key_start: str = ""):
     try:
         st.info("Attempting to fetch data...")
 
+        # st.info(f"Requesting: {url}wordcloud?brand={brand}")
+        # image = requests.get(f"{url}wordcloud?brand={brand}").content
+        # st.image(image, caption="Word Cloud")
+
         # brand_str = ",".join(brands) #add this line if the backends accept comma-separated in a single parameter
         # st.write(params)
         start = time.perf_counter()
