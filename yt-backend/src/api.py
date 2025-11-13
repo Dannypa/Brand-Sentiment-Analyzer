@@ -1,3 +1,4 @@
+from fastapi import FastAPI, Depends
 import io
 import json
 import os
@@ -11,10 +12,26 @@ from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, JsonValue
+import io
+import plotly.express as px
+import json
+import requests
+from typing import Optional
+import os
+from models import Chart
+from dotenv import load_dotenv
+from ytapi import search_videos, get_comments, get_video_details
+from services import video_to_dataframe, remove_videos_without_brand_title, remove_videos_without_comments
+import pandas as pd
+from charts.latest_histogram import histogram_sentiment, histogram_combined
+from charts.time_series import time_series_sentiment
 
 from charts.latest_histogram import histogram_combined, histogram_sentiment
 from charts.time_series import time_series_sentiment
 from charts.word_cloud import word_cloud
+from charts.hist import hist
+import psycopg2
+from psycopg2 import pool
 from models import Chart
 from services import (
     remove_videos_without_brand_title,
@@ -29,10 +46,38 @@ load_dotenv()
 ML_URL = os.environ.get("ML_URL")  # todo: env var
 
 api = FastAPI()
+db_pool = None
 # print(requests.get("http://localhost:10001/docs").json())
 
+@api.on_event("startup")
+def startup():
+    global db_pool
+    db_pool = psycopg2.pool.SimpleConnectionPool(
+        1,
+        10,
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        database=os.getenv("DB_NAME"),
+    )
 
-def get_charts_inner(brands: list[str]) -> list[Chart]:
+@api.on_event("shutdown")
+def shutdown():
+    global db_pool
+    if db_pool:
+        db_pool.closeall()
+
+def get_db_connection():
+    global db_pool
+    try:
+        conn = db_pool.getconn()
+        yield conn
+    finally:
+        db_pool.putconn(conn)
+
+
+def get_charts_inner(brands: list[str], conn: psycopg2) -> list[Chart]:
     charts = []
 
     try:
@@ -40,13 +85,13 @@ def get_charts_inner(brands: list[str]) -> list[Chart]:
             [
                 Chart(
                     title="Sentiment histogram",
-                    plotly_json=histogram_sentiment(brands),
+                    plotly_json=hist(brands, conn),
                 ),
                 # Chart(title="Combined histogram", plotly_json=histogram_combined([brand])),
-                Chart(
-                    title="Sentiment time series",
-                    plotly_json=time_series_sentiment(brands),
-                ),
+                # Chart(
+                #     title="Sentiment time series",
+                #     plotly_json=time_series_sentiment(brands),
+                # ),
                 # Chart(title="Views time series", plotly_json=time_series_views([brand])),
                 # Chart(title="Combined time series", plotly_json=time_series_combined([brand])),
             ]
@@ -58,13 +103,13 @@ def get_charts_inner(brands: list[str]) -> list[Chart]:
 
 
 @api.get("/charts")
-def get_charts(brand: str) -> list[Chart]:
-    return get_charts_inner([brand])
+def get_charts(brand: str, conn=Depends(get_db_connection)) -> list[Chart]:
+    return get_charts_inner([brand], conn)
 
 
 @api.post("/charts/multibrand")
-def get_charts_multibrand(brands: list[str]) -> list[Chart]:
-    return get_charts_inner(brands)
+def get_charts_multibrand(brands: list[str], conn=Depends(get_db_connection)) -> list[Chart]:
+    return get_charts_inner(brands, conn)
 
 
 @api.get("/charts/wordcloud")
