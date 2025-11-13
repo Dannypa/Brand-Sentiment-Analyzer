@@ -174,3 +174,17 @@ class SentimentQuery(BaseModel):
 class SentimentResponse(BaseModel):
     sentiment: list[list[float]] = Field(..., title="The sentiments of the texts; a list of lists of floating point numbers from -1 to 1.")
 
+# Models for database
+class VideoCache(BaseModel):
+    video_id: str
+    query: str
+    datetime: datetime
+    views: Optional[int]
+    likes: Optional[int]
+    comments: Optional[int]
+    avg_comment_sentiment: Optional[float]
+    title_sentiment: Optional[float]
+    weighted_sentiment: Optional[float] = None
+    avg_sentiment: Optional[float] = None
+
+
