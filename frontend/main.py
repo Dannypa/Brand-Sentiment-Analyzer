@@ -1,4 +1,5 @@
 import os
+import time
 from threading import ExceptHookArgs
 
 import plotly.io as pio
@@ -23,7 +24,15 @@ def render_charts(url: str, brands: list[str], key_start: str = ""):
 
         # brand_str = ",".join(brands) #add this line if the backends accept comma-separated in a single parameter
         # st.write(params)
-        data = requests.post(url, json=brands).json()
+        start = time.perf_counter()
+        resp = requests.post(url, json=brands)
+        end = time.perf_counter()
+        data = resp.json()
+
+        st.info(f"Executed the request in {(end - start):.3f} s.")
+
+        if resp.status_code != 200:
+            st.error(str(data))
         # st.write(data)
 
         st.success("Successfully received all the data.")
