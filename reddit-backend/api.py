@@ -86,13 +86,13 @@ def get_charts_inner(brands: list[str], conn: psycopg2) -> list[Chart]:
             [
                 Chart(
                     title="Sentiment histogram",
-                    plotly_json=histogram_sentiment(brands, conn),
+                    plotly_json=histogram_sentiment(conn, brands),
                 ),
                 # Chart(title="Combined histogram", plotly_json=histogram_combined([brand])),
-                # Chart(
-                #     title="Sentiment time series",
-                #     plotly_json=time_series_sentiment(brands),
-                # ),
+                Chart(
+                    title="Sentiment time series",
+                    plotly_json=time_series_sentiment(conn, brands),
+                ),
                 # Chart(title="Views time series", plotly_json=time_series_views([brand])),
                 # Chart(title="Combined time series", plotly_json=time_series_combined([brand])),
             ]
