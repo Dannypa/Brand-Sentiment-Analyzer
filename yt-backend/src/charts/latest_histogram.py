@@ -13,7 +13,7 @@ def histogram_sentiment(brands: list[str], conn: psycopg2) -> str:
     videos = []
 
     for b in brands:
-        brand_videos = get_all_video_data(conn, b, 100, datetime.now() - dt.timedelta(days=30), datetime.now())
+        brand_videos = get_all_video_data(conn, b, 10, datetime.now() - dt.timedelta(days=30), datetime.now())
         if not brand_videos: 
                 continue
         videos.extend(brand_videos)

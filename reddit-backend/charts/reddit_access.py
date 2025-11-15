@@ -109,8 +109,8 @@ def get_all_post_data(conn, reddit, brand, limit_per_sub, cutoff = None) -> List
             # fetch_keyword_search returns rows for posts and comments
             for _, row in posts_df.iterrows():
                 date = datetime.fromtimestamp(row.get("created_utc"))
-                if cutoff is None or date < cutoff:
-                    continue
+                # if cutoff is None or date > cutoff:
+                #     continue
                 comments_for_post = comments_df[comments_df["post_id"] == row["id"]]
                 title = (str(row.get("title", "")) + " " + str(row.get("content", ""))).strip()
                 title_sentiment = get_sentiment([title])[0]
