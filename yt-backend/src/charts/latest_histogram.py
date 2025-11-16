@@ -1,21 +1,26 @@
-from datetime import datetime
 import datetime as dt
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import plotly.io as pio
-from services import get_all_video_data
 import psycopg2
 
+from services import get_all_video_data
+
+
 # kinda the estimated distribution kde line
-def histogram_sentiment(brands: list[str], conn: psycopg2) -> str:
+async def histogram_sentiment(brands: list[str], conn: psycopg2) -> str:
     videos = []
 
     for b in brands:
-        brand_videos = get_all_video_data(conn, b, 100, datetime.now() - dt.timedelta(days=30), datetime.now())
-        if not brand_videos: 
-                continue
+        brand_videos = await get_all_video_data(
+            conn, b, 100, datetime.now() - dt.timedelta(days=30), datetime.now()
+        )
+        if not brand_videos:
+            continue
         videos.extend(brand_videos)
 
     if not videos:
@@ -24,22 +29,29 @@ def histogram_sentiment(brands: list[str], conn: psycopg2) -> str:
             title="No data available",
             xaxis_title="Sentiment",
             yaxis_title="Number of videos",
-            template="plotly_white",)
+            template="plotly_white",
+        )
         return pio.to_json(fig)
-    
-    video_df = pd.DataFrame([{"video_id": v.video_id,
-            "brand": v.query,
-            "published_at": v.datetime,
-            "views": v.views or 0,
-            "likes": v.likes or 0,
-            "comments": v.comments or 0,
-            "avg_comment_sentiment": v.avg_comment_sentiment or 0.0,
-            "title_sentiment": v.title_sentiment or 0.0,
-            "avg_sentiment": v.avg_sentiment or 0.0,
-            "weighted_sentiment": v.weighted_sentiment or 0.0}
-        for v in videos])
+
+    video_df = pd.DataFrame(
+        [
+            {
+                "video_id": v.video_id,
+                "brand": v.query,
+                "published_at": v.datetime,
+                "views": v.views or 0,
+                "likes": v.likes or 0,
+                "comments": v.comments or 0,
+                "avg_comment_sentiment": v.avg_comment_sentiment or 0.0,
+                "title_sentiment": v.title_sentiment or 0.0,
+                "avg_sentiment": v.avg_sentiment or 0.0,
+                "weighted_sentiment": v.weighted_sentiment or 0.0,
+            }
+            for v in videos
+        ]
+    )
     print(video_df.head(5))
-    
+
     brands_sort = sorted(video_df["brand"].unique())
     hist_data = []
     group_labels = []
@@ -77,9 +89,9 @@ def histogram_sentiment(brands: list[str], conn: psycopg2) -> str:
                 title="No data available",
                 xaxis_title="Sentiment",
                 yaxis_title="Number of videos",
-                template="plotly_white",)
+                template="plotly_white",
+            )
             return pio.to_json(fig)
-
 
         fig.update_layout(
             title="Sentiment Distribution (estimated)",
@@ -96,9 +108,11 @@ def histogram_combined(brands: list[str], conn: psycopg2) -> str:
     videos = []
 
     for b in brands:
-        brand_videos = get_all_video_data(conn, b, 100, datetime.now() - dt.timedelta(days=30), datetime.now())
-        if not brand_videos: 
-                continue
+        brand_videos = get_all_video_data(
+            conn, b, 100, datetime.now() - dt.timedelta(days=30), datetime.now()
+        )
+        if not brand_videos:
+            continue
         videos.extend(brand_videos)
 
     if not videos:
@@ -107,20 +121,27 @@ def histogram_combined(brands: list[str], conn: psycopg2) -> str:
             title="No data available",
             xaxis_title="Sentiment",
             yaxis_title="Number of videos",
-            template="plotly_white",)
+            template="plotly_white",
+        )
         return pio.to_json(fig)
-    
-    video_df = pd.DataFrame([{ "video_id": v.video_id,
-            "brand": v.query,
-            "published_at": v.datetime,
-            "views": v.views or 0,
-            "likes": v.likes or 0,
-            "comments": v.comments or 0,
-            "avg_comment_sentiment": v.avg_comment_sentiment or 0.0,
-            "title_sentiment": v.title_sentiment or 0.0,
-            "avg_sentiment": v.avg_sentiment or 0.0,
-            "weighted_sentiment": v.weighted_sentiment or 0.0}
-        for v in videos])
+
+    video_df = pd.DataFrame(
+        [
+            {
+                "video_id": v.video_id,
+                "brand": v.query,
+                "published_at": v.datetime,
+                "views": v.views or 0,
+                "likes": v.likes or 0,
+                "comments": v.comments or 0,
+                "avg_comment_sentiment": v.avg_comment_sentiment or 0.0,
+                "title_sentiment": v.title_sentiment or 0.0,
+                "avg_sentiment": v.avg_sentiment or 0.0,
+                "weighted_sentiment": v.weighted_sentiment or 0.0,
+            }
+            for v in videos
+        ]
+    )
 
     brands_sort = sorted(video_df["brand"].unique())
     hist_data = []
@@ -159,9 +180,10 @@ def histogram_combined(brands: list[str], conn: psycopg2) -> str:
                 title="No data available",
                 xaxis_title="Sentiment",
                 yaxis_title="Number of videos",
-                template="plotly_white",)
+                template="plotly_white",
+            )
             return pio.to_json(fig)
-        
+
         fig.update_layout(
             title="Sentiment Distribution (estimated, weighted by attention)",
             xaxis_title="Sentiment (-1 to 1)",
@@ -171,4 +193,3 @@ def histogram_combined(brands: list[str], conn: psycopg2) -> str:
         fig.update_layout(template="plotly_white")
 
         return pio.to_json(fig)
-

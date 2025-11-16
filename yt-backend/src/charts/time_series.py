@@ -1,28 +1,37 @@
-from datetime import datetime
+import asyncio
 import datetime as dt
 from dataclasses import dataclass
+from datetime import datetime
 
 import pandas as pd
+
 # import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
+import psycopg2
 from dateutil.relativedelta import relativedelta
 
-from ml import get_sentiment
-from ytapi import get_comments, search_videos
 from services import get_all_video_data
-import psycopg2
 
-def time_series_sentiment(brands: list[str], conn: psycopg2):
+
+async def get_by_start_date(start_date: datetime, brand: str, conn):
+    end_date = start_date + QUERY_SPAN
+    videos = await get_all_video_data(conn, brand, 5, start_date, end_date)
+    return videos
+
+
+async def time_series_sentiment(brands: list[str], conn: psycopg2):
     brand_videos = {}
 
     for brand in brands:
         brand_videos[brand] = []
-        for start_date in get_download_timerange():
-            end_date = start_date + QUERY_SPAN
-            videos = get_all_video_data(conn, brand, 5, start_date, end_date)
-            if videos:
-                brand_videos[brand].extend(videos)
+
+        tasks = [
+            get_by_start_date(start_date, brand, conn)
+            for start_date in get_download_timerange()
+        ]
+        for result in await asyncio.gather(*tasks):
+            brand_videos[brand].extend(result)
 
     if not any(brand_videos.values()):
         fig = go.Figure()
@@ -30,7 +39,8 @@ def time_series_sentiment(brands: list[str], conn: psycopg2):
             title="No data available",
             xaxis_title="Month",
             yaxis_title="Sentiment",
-            template="plotly_white",)
+            template="plotly_white",
+        )
         return pio.to_json(fig)
 
     figures = []
@@ -39,13 +49,21 @@ def time_series_sentiment(brands: list[str], conn: psycopg2):
             continue
 
         try:
-            video_df = pd.DataFrame([{"video_id": v.video_id,
-                    "brand": v.query,
-                    "published_at": v.datetime,
-                    "avg_sentiment": v.avg_sentiment or 0.0}
-                for v in brand_videos[brand]])
+            video_df = pd.DataFrame(
+                [
+                    {
+                        "video_id": v.video_id,
+                        "brand": v.query,
+                        "published_at": v.datetime,
+                        "avg_sentiment": v.avg_sentiment or 0.0,
+                    }
+                    for v in brand_videos[brand]
+                ]
+            )
 
-            video_df["published_at"] = pd.to_datetime(video_df["published_at"], errors="coerce")
+            video_df["published_at"] = pd.to_datetime(
+                video_df["published_at"], errors="coerce"
+            )
             video_df = video_df.dropna(subset=["published_at"])
 
             video_df["month"] = video_df["published_at"].dt.to_period("M")
@@ -53,12 +71,14 @@ def time_series_sentiment(brands: list[str], conn: psycopg2):
             monthly_df["month"] = monthly_df["month"].dt.to_timestamp()
             monthly_df.sort_values(by="month", inplace=True)
 
-            figures.append(go.Scatter(
-                x=monthly_df["month"],
-                y=monthly_df["avg_sentiment"],
-                name=brand,
-                connectgaps=True
-            ))
+            figures.append(
+                go.Scatter(
+                    x=monthly_df["month"],
+                    y=monthly_df["avg_sentiment"],
+                    name=brand,
+                    connectgaps=True,
+                )
+            )
         except Exception as e:
             print(f"Error processing brand {brand}: {e}")
             continue
@@ -69,7 +89,8 @@ def time_series_sentiment(brands: list[str], conn: psycopg2):
             title="No valid data available",
             xaxis_title="Month",
             yaxis_title="Sentiment",
-            template="plotly_white",)
+            template="plotly_white",
+        )
         return pio.to_json(fig)
 
     fig = go.Figure(data=figures)
@@ -77,13 +98,15 @@ def time_series_sentiment(brands: list[str], conn: psycopg2):
         xaxis_title="Month",
         yaxis_title="Sentiment",
         title="Sentiment over time",
-        template="plotly_white"
+        template="plotly_white",
     )
 
     return pio.to_json(fig)
 
+
 QUERY_SPAN = relativedelta(months=4)
 OLDEST_DATE = dt.datetime.now() - relativedelta(months=24)
+
 
 def get_timerange(step: relativedelta):
     current_date = OLDEST_DATE
@@ -95,7 +118,8 @@ def get_timerange(step: relativedelta):
 def get_download_timerange():
     yield from get_timerange(QUERY_SPAN)
 
-'''
+
+"""
 QUERY_SPAN = relativedelta(months=4)
 OLDEST_DATE = dt.datetime.now() - relativedelta(months=24)
 QUERY_SUFFIXES = ("",)
@@ -250,4 +274,4 @@ def time_series_sentiment(brands: list[str]) -> str:
 #     df = px.data.tips() # returns a pandas DataFrame
 #     fig = px.histogram(df, x="total_bill")
 #     return pio.to_json(fig)
-'''
+"""

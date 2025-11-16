@@ -8,5 +8,6 @@ dependencies = [
     "fastapi[standard]>=0.119.0",
     "pandas>=2.3.3",
     "plotly[express]>=6.3.1",
+    "psycopg2-binary>=2.9.11",
     "requests>=2.32.5",
 ]

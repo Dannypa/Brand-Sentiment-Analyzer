@@ -1,6 +1,7 @@
-from pydantic import BaseModel, JsonValue, Field
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 # Model for building a search query
@@ -16,6 +17,33 @@ class SearchQuery(BaseModel):
     language: str = "en"
     page_token: Optional[str] = None
 
+    def to_str(self, key: str) -> str:
+        query = [
+            "https://youtube.googleapis.com/youtube/v3/search?",
+            f"q={self.q}&",
+            f"part={','.join(self.part)}&",
+            f"type={self.type}&",
+            f"maxResults={self.max_results}&",
+        ]
+
+        rfc3339_format = "%Y-%m-%dT%H:%M:%SZ"
+        if self.published_after is not None:
+            query.append(
+                f"publishedAfter={self.published_after.strftime(rfc3339_format)}&"
+            )
+        if self.published_before is not None:
+            query.append(
+                f"publishedBefore={self.published_before.strftime(rfc3339_format)}&"
+            )
+
+        query.append(f"videoDuration={','.join(self.video_duration)}&")
+        query.append(f"order={self.order}&")
+        query.append(f"relevanceLanguage={self.language}&")
+        if self.page_token is not None:
+            query.append(f"pageToken={self.page_token}&")
+        query.append(f"key={key}")
+        return "".join(query)
+
 
 class CommentThreadRetrieveQuery(BaseModel):
     video_id: str
@@ -24,6 +52,22 @@ class CommentThreadRetrieveQuery(BaseModel):
     order: str = "relevance"
     search_terms: Optional[tuple[str]] = None
     page_token: Optional[str] = None
+
+    def to_str(self, key: str) -> str:
+        query = [
+            "https://youtube.googleapis.com/youtube/v3/commentThreads?",
+            f"videoId={self.video_id}&",
+            f"part={','.join(self.part)}&",
+            "textFormat=plainText&",
+            f"maxResults={self.max_results}&",
+            f"order={self.order}&",
+        ]
+        if self.search_terms is not None:
+            query.append(f"searchTerms={self.search_terms}&")
+        if self.page_token is not None:
+            query.append(f"pageToken={self.page_token}&")
+        query.append(f"key={key}")
+        return "".join(query)
 
 
 # Models for video search
@@ -129,6 +173,7 @@ class CommentListResponse(BaseModel):
 
 # Video models
 
+
 class VideoStatistics(BaseModel):
     viewCount: int
     likeCount: Optional[int] = None
@@ -159,7 +204,8 @@ class VideoListResponse(BaseModel):
 # Model for charts
 class Chart(BaseModel):
     title: Optional[str]
-    plotly_json: str # test json string
+    plotly_json: str  # test json string
+
 
 # Models for ML service
 class Team(BaseModel):
@@ -168,11 +214,17 @@ class Team(BaseModel):
     topic: Optional[str] = None
     texts: list[str]
 
+
 class SentimentQuery(BaseModel):
     teams: list[Team]
 
+
 class SentimentResponse(BaseModel):
-    sentiment: list[list[float]] = Field(..., title="The sentiments of the texts; a list of lists of floating point numbers from -1 to 1.")
+    sentiment: list[list[float]] = Field(
+        ...,
+        title="The sentiments of the texts; a list of lists of floating point numbers from -1 to 1.",
+    )
+
 
 # Models for database
 class VideoCache(BaseModel):
@@ -186,5 +238,3 @@ class VideoCache(BaseModel):
     title_sentiment: Optional[float]
     weighted_sentiment: Optional[float] = None
     avg_sentiment: Optional[float] = None
-
-
