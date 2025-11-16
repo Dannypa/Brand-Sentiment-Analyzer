@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS youtube_cache (
 	comments INTEGER,
 	avg_comment_sentiment REAL,
 	title_sentiment REAL,
-	weighted_sentiment REAL GENERATED ALWAYS AS ((title_sentiment * likes * 0.012) + (avg_comment_sentiment * comments * 0.988)),
-	avg_sentiment REAL GENERATED ALWAYS AS ((avg_comment_sentiment + title_sentiment) / 2)
+	weighted_sentiment REAL GENERATED ALWAYS AS ((title_sentiment * likes * 0.012) + (avg_comment_sentiment * comments * 0.988)) STORED,
+	avg_sentiment REAL GENERATED ALWAYS AS ((avg_comment_sentiment + title_sentiment) / 2) STORED
 );
 
 CREATE INDEX idx_youtube_cache_query_datetime ON youtube_cache (query, datetime);
