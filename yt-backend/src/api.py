@@ -85,7 +85,7 @@ def get_charts_inner(brands: list[str], conn: psycopg2) -> list[Chart]:
             [
                 Chart(
                     title="Sentiment histogram",
-                    plotly_json=hist(brands, conn),
+                    plotly_json=histogram_sentiment(brands, conn),
                 ),
                 # Chart(title="Combined histogram", plotly_json=histogram_combined([brand])),
                 # Chart(
