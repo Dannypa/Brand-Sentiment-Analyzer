@@ -4,12 +4,14 @@ import plotly.express as px
 import plotly.io as pio
 from datetime import datetime, timedelta, timezone
 from typing import List
+import numpy as np
+from models import PostCache
 
-from .reddit_access import init_reddit, fetch_keyword_search
+from .reddit_access import init_reddit, fetch_keyword_search, get_all_post_data
 from .ml_client import get_sentiment
 
 
-def time_series_sentiment(brands: List[str], days: int = 30) -> str:
+def time_series_sentiment(conn, brands: List[str], days: int = 30) -> str:
     """Daily average sentiment time series for each brand from Reddit.
 
     brands: list of brand keywords.
@@ -27,39 +29,12 @@ def time_series_sentiment(brands: List[str], days: int = 30) -> str:
     reddit = init_reddit(client_id, client_secret, user_agent)
 
     all_rows = []
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff = datetime.now() - timedelta(days=days)
 
     for brand in brands:
-        try:
-            df = fetch_keyword_search(reddit, ["all"], [brand], time_filter="month", limit_per_sub=5)
-        except Exception as e:
-            print(f"Error fetching reddit data for {brand}: {e}")
-            df = pd.DataFrame()
-
-        texts = []
-        dates = []
-        if df is None or df.empty:
-            pass
-        else:
-            for _, row in df.iterrows():
-                created = row.get("created_utc")
-                try:
-                    dt = datetime.fromtimestamp(float(created), tz=timezone.utc)
-                except Exception:
-                    dt = None
-                if dt is None or dt < cutoff:
-                    continue
-
-                if row.get("type") == "post":
-                    t = (str(row.get("title", "")) + " " + str(row.get("content", ""))).strip()
-                else:
-                    t = row.get("content") or row.get("body") or ""
-
-                if t:
-                    texts.append(t)
-                    dates.append(dt.date() if dt else datetime.now(timezone.utc).date())
-
-        sentiments = get_sentiment(texts) if texts else []
+        post_data = get_all_post_data(conn, reddit, brand, 100, cutoff)
+        sentiments = [post.avg_sentiment for post in post_data if post.avg_sentiment is not None]
+        dates = [post.datetime.date() for post in post_data if post.avg_sentiment is not None]
         for d, s in zip(dates, sentiments if sentiments else [0.0] * len(dates)):
             all_rows.append({"date": d, "brand": brand, "sentiment": s})
 

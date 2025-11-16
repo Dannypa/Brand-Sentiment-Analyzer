@@ -84,9 +84,10 @@ def split_date_range(start_date: datetime, end_date: datetime, n: int) -> list[t
 def get_all_video_data(conn: psycopg2, query: str, max_results: int, start: datetime, end: datetime) -> list[VideoCache]:
 
     video_data = search_video_database(conn, query, start, end)
-    print(f"Found restulrts amount: {len(video_data)}")
+    print(f"Found {len(video_data)} results")
 
     if len(video_data) < max_results:
+        max_results += 20
         if max_results > 50:
             iterations = (max_results // 50) + 1
             try:

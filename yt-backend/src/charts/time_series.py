@@ -13,65 +13,74 @@ from ytapi import get_comments, search_videos
 from services import get_all_video_data
 import psycopg2
 
-def time_series_sentiment(brands: list[str], conn: psycopg2): 
-    videos = []
+def time_series_sentiment(brands: list[str], conn: psycopg2):
+    brand_videos = {}
 
-    for b in brands:
+    for brand in brands:
+        brand_videos[brand] = []
         for start_date in get_download_timerange():
             end_date = start_date + QUERY_SPAN
-            brand_videos = get_all_video_data(conn, b, 50, start_date, end_date)
-            if not brand_videos: 
-                    continue
-            videos.extend(brand_videos)
+            videos = get_all_video_data(conn, brand, 5, start_date, end_date)
+            if videos:
+                brand_videos[brand].extend(videos)
 
-    if not videos:
+    if not any(brand_videos.values()):
         fig = go.Figure()
         fig.update_layout(
             title="No data available",
-            xaxis_title="Sentiment",
-            yaxis_title="Number of videos",
+            xaxis_title="Month",
+            yaxis_title="Sentiment",
             template="plotly_white",)
         return pio.to_json(fig)
-    try:
-        video_df = pd.DataFrame([{"video_id": v.video_id,
-                "brand": v.query,
-                "published_at": v.datetime,
-                "avg_sentiment": v.avg_sentiment or 0.0}
-            for v in videos])
-    except Exception as e:
-        print(f"Error in creating df: {e}")
-        raise
 
-    try:
-        video_df["published_at"] = pd.to_datetime(video_df["published_at"], errors="coerce")
-        video_df = video_df.dropna(subset=["published_at"])
-        
-        video_df["month"] = video_df["published_at"].dt.to_period("M")
-        monthly_df = video_df.groupby(["month", "brand"])["avg_sentiment"].mean().reset_index()
-        monthly_df["month"] = monthly_df["month"].dt.to_timestamp()
-        monthly_df.sort_values(by="month", inplace=True)
-    except Exception as e:
-        print(f"Error in grouping: {e}")
-        raise
+    figures = []
+    for brand in brands:
+        if not brand_videos[brand]:
+            continue
 
-    try:
-        fig = go.Figure(
-            data=[
-                go.Scatter(x= monthly_df[monthly_df["brand"] == brand]["month"], 
-                        y= monthly_df[monthly_df["brand"] == brand]["avg_sentiment"], name=brand, connectgaps=True)
-                for brand in sorted(monthly_df["brand"].unique())
-            ],
-            layout={
-                "xaxis": {"title": "month"},
-                "yaxis": {"title": "sentiment"},
-                "title": "Sentiment over time",
-            },
-        )
+        try:
+            video_df = pd.DataFrame([{"video_id": v.video_id,
+                    "brand": v.query,
+                    "published_at": v.datetime,
+                    "avg_sentiment": v.avg_sentiment or 0.0}
+                for v in brand_videos[brand]])
 
+            video_df["published_at"] = pd.to_datetime(video_df["published_at"], errors="coerce")
+            video_df = video_df.dropna(subset=["published_at"])
+
+            video_df["month"] = video_df["published_at"].dt.to_period("M")
+            monthly_df = video_df.groupby("month")["avg_sentiment"].mean().reset_index()
+            monthly_df["month"] = monthly_df["month"].dt.to_timestamp()
+            monthly_df.sort_values(by="month", inplace=True)
+
+            figures.append(go.Scatter(
+                x=monthly_df["month"],
+                y=monthly_df["avg_sentiment"],
+                name=brand,
+                connectgaps=True
+            ))
+        except Exception as e:
+            print(f"Error processing brand {brand}: {e}")
+            continue
+
+    if not figures:
+        fig = go.Figure()
+        fig.update_layout(
+            title="No valid data available",
+            xaxis_title="Month",
+            yaxis_title="Sentiment",
+            template="plotly_white",)
         return pio.to_json(fig)
-    except Exception as e:
-        print(f"Error in plot: {e}")
-        raise
+
+    fig = go.Figure(data=figures)
+    fig.update_layout(
+        xaxis_title="Month",
+        yaxis_title="Sentiment",
+        title="Sentiment over time",
+        template="plotly_white"
+    )
+
+    return pio.to_json(fig)
 
 QUERY_SPAN = relativedelta(months=4)
 OLDEST_DATE = dt.datetime.now() - relativedelta(months=24)

@@ -6,12 +6,17 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import numpy as np
 from typing import List
+import psycopg2
+from models import PostCache
+from datetime import datetime
+import datetime as dt
+from db import search_post_database, insert_post_cache
 
-from .reddit_access import init_reddit, fetch_keyword_search
+from .reddit_access import init_reddit, fetch_keyword_search, get_all_post_data
 from .ml_client import get_sentiment
 
 
-def histogram_sentiment(brands: List[str]) -> str:
+def histogram_sentiment(conn, brands: List[str]) -> str:
     """
     Create a sentiment histogram for given brands from Reddit data.
 
@@ -34,30 +39,14 @@ def histogram_sentiment(brands: List[str]) -> str:
     group_labels = []
 
     for brand in brands:
-        try:
-            df = fetch_keyword_search(reddit, ["all"], [brand], time_filter="month", limit_per_sub=50)
-        except Exception as e:
-            print(f"Error fetching reddit data for {brand}: {e}")
-            df = pd.DataFrame()
-
-        texts = []
-        if df is None or df.empty:
-            texts = []
-        else:
-            # fetch_keyword_search returns rows for posts and comments
-            for _, row in df.iterrows():
-                if row.get("type") == "post":
-                    t = (str(row.get("title", "")) + " " + str(row.get("content", ""))).strip()
-                    if t:
-                        texts.append(t)
-                else:
-                    c = row.get("content") or row.get("body") or ""
-                    if c:
-                        texts.append(str(c))
-
-        sentiments = get_sentiment(texts) if texts else []
+        print(f"Processing brand: {brand}")
+        post_data = get_all_post_data(conn, reddit, brand, 50)
+        print(f"Fetched {len(post_data)} posts for brand {brand}")
+        sentiments = [post.avg_sentiment for post in post_data if post.avg_sentiment is not None]
+        print(sentiments)
         hist_data.append(sentiments)
         group_labels.append(brand)
+
 
     # If nothing to plot, return empty figure
     if not hist_data or not group_labels:

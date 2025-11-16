@@ -6,6 +6,7 @@ RUN pip install -r ./requirements.txt
 COPY ./api.py ./
 COPY ./charts ./charts
 COPY ./models.py ./
+COPY ./db.py ./
 EXPOSE 8080
 
 RUN useradd app

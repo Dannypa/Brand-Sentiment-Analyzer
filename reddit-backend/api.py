@@ -1,8 +1,10 @@
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.exceptions import HTTPException
+import psycopg2
+from psycopg2 import pool
 
 from charts.latest_histogram import histogram_sentiment
 from charts.time_series import time_series_sentiment
@@ -14,6 +16,7 @@ load_dotenv()
 ML_URL = os.environ.get("ML_URL")  # todo: env var
 
 api = FastAPI()
+db_pool = None
 # print(requests.get("http://localhost:10001/docs").json())
 
 
@@ -47,8 +50,35 @@ api = FastAPI()
 
 #     return charts
 
+@api.on_event("startup")
+def startup():
+    global db_pool
+    db_pool = psycopg2.pool.SimpleConnectionPool(
+        1,
+        10,
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        database=os.getenv("DB_NAME"),
+    )
 
-def get_charts_inner(brands: list[str]) -> list[Chart]:
+@api.on_event("shutdown")
+def shutdown():
+    global db_pool
+    if db_pool:
+        db_pool.closeall()
+
+def get_db_connection():
+    global db_pool
+    try:
+        conn = db_pool.getconn()
+        yield conn
+    finally:
+        db_pool.putconn(conn)
+
+
+def get_charts_inner(brands: list[str], conn: psycopg2) -> list[Chart]:
     charts = []
 
     try:
@@ -56,12 +86,12 @@ def get_charts_inner(brands: list[str]) -> list[Chart]:
             [
                 Chart(
                     title="Sentiment histogram",
-                    plotly_json=histogram_sentiment(brands),
+                    plotly_json=histogram_sentiment(conn, brands),
                 ),
                 # Chart(title="Combined histogram", plotly_json=histogram_combined([brand])),
                 Chart(
                     title="Sentiment time series",
-                    plotly_json=time_series_sentiment(brands),
+                    plotly_json=time_series_sentiment(conn, brands),
                 ),
                 # Chart(title="Views time series", plotly_json=time_series_views([brand])),
                 # Chart(title="Combined time series", plotly_json=time_series_combined([brand])),
@@ -74,10 +104,10 @@ def get_charts_inner(brands: list[str]) -> list[Chart]:
 
 
 @api.get("/charts")
-def get_charts(brand: str) -> list[Chart]:
-    return get_charts_inner([brand])
+def get_charts(brand: str, conn=Depends(get_db_connection)) -> list[Chart]:
+    return get_charts_inner([brand], conn)
 
 
 @api.post("/charts/multibrand")
-def get_charts_multibrand(brands: list[str]) -> list[Chart]:
-    return get_charts_inner(brands)
+def get_charts_multibrand(brands: list[str], conn=Depends(get_db_connection)) -> list[Chart]:
+    return get_charts_inner(brands, conn)

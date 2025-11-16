@@ -20,3 +20,11 @@ class SentimentQuery(BaseModel):
 class SentimentResponse(BaseModel):
     sentiment: list[list[float]] = Field(..., title="The sentiments of the texts; a list of lists of floating point numbers from -1 to 1.")
 
+class PostCache(BaseModel):
+    post_id: str
+    query: str
+    subreddit: str
+    datetime: datetime
+    title_sentiment: float
+    avg_comment_sentiment: float
+    avg_sentiment: Optional[float] = None
