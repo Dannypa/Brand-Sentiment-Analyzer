@@ -11,8 +11,8 @@ load_dotenv()
 
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", 8501))
-yt_url = os.environ.get("YT_URL", "http://yt:8080/charts/multibrand")
-reddit_url = os.environ.get("REDDIT_URL", "http://reddit:8080/charts/multibrand")
+yt_url = os.environ.get("YT_URL", "http://yt:8080/charts/")
+reddit_url = os.environ.get("REDDIT_URL", "http://reddit:8080/charts/")
 
 
 def render_charts(url: str, brands: list[str], key_start: str = ""):
@@ -22,14 +22,15 @@ def render_charts(url: str, brands: list[str], key_start: str = ""):
     try:
         st.info("Attempting to fetch data...")
 
-        # st.info(f"Requesting: {url}wordcloud?brand={brand}")
-        # image = requests.get(f"{url}wordcloud?brand={brand}").content
-        # st.image(image, caption="Word Cloud")
+        if "yt" in url.lower():
+            st.info(f"Requesting: {url}wordcloud?brand={brand}")
+            image = requests.get(f"{url}wordcloud?brand={brand}").content
+            st.image(image, caption="Word Cloud")
 
         # brand_str = ",".join(brands) #add this line if the backends accept comma-separated in a single parameter
         # st.write(params)
         start = time.perf_counter()
-        resp = requests.post(url, json=brands)
+        resp = requests.post(url + "multibrand", json=brands)
         end = time.perf_counter()
         data = resp.json()
 
