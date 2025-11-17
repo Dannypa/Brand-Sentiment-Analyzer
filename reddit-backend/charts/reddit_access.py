@@ -7,6 +7,8 @@ from db import search_post_database, insert_post_cache
 import datetime as dt
 from .ml_client import get_sentiment
 import numpy as np
+import time
+
 
 def init_reddit(client_id, client_secret, user_agent):
     """Initialize Reddit client"""
@@ -86,55 +88,59 @@ def fetch_keyword_search(reddit_client, subreddits: list[str], keywords: list[st
 
 
 def get_all_post_data(conn, reddit, brand, limit_per_sub, cutoff = None) -> List[PostCache]:
-    
+    # start = time.perf_counter()
     try:
         post_data = search_post_database(conn, brand, datetime.now() - dt.timedelta(days=30), datetime.now())
     except Exception as e:
-        print(f"Error searching database for {brand}, {e}")
+        print("Error searching database for %s: %s" % (brand, e))
         post_data = []
-    print(f"Found {len(post_data)} cached posts for brand {brand}")
+    # print("Found %d cached posts for brand %s" % (len(post_data), brand))
 
     if len(post_data) < limit_per_sub:
         try:
-            df = fetch_keyword_search(reddit, ["all"], [brand], time_filter="month", limit_per_sub=limit_per_sub+50)
+            posts_df, comments_df = fetch_top_posts(reddit, [brand], time_filter="month", limit=limit_per_sub) # limit=limit_per_sub+50 if want to get more posts
         except Exception as e:
-            print(f"Error fetching reddit data for {brand}: {e}")
-            df = pd.DataFrame()
+            print("Error fetching reddit data for %s: %s" % (brand, e))
+            posts_df = pd.DataFrame()
+            comments_df = pd.DataFrame()
 
-        if df is None or df.empty:
+        # If there are no posts returned, bail out
+        if posts_df is None or posts_df.empty:
+            # elapsed = time.perf_counter() - start
+            # print("get_all_post_data for %s returned %d posts in %.3fs (no new posts)" % (brand, len(post_data), elapsed))
             return post_data
-        else:
-            posts_df = df[df["type"] == "post"]
-            comments_df = df[df["type"] == "comment"]
-            # fetch_keyword_search returns rows for posts and comments
-            for _, row in posts_df.iterrows():
-                date = datetime.fromtimestamp(row.get("created_utc"))
-                # if cutoff is None or date > cutoff:
-                #     continue
-                comments_for_post = comments_df[comments_df["post_id"] == row["id"]]
-                title = (str(row.get("title", "")) + " " + str(row.get("content", ""))).strip()
-                title_sentiment = get_sentiment([title])[0]
-                comment_texts = comments_for_post["content"].tolist()
-                comment_sentiments = get_sentiment(comment_texts)
-                avg_comment_sentiment = np.mean(comment_sentiments) if comment_sentiments else 0.0
-                combined_sentiment = np.mean([title_sentiment, avg_comment_sentiment])
-                try:
-                    post_cache = PostCache(
-                        post_id=row["id"],
-                        query=brand,
-                        subreddit=row.get("subreddit", "all"),
-                        datetime=datetime.fromtimestamp(row.get("created_utc")),
-                        title_sentiment=title_sentiment,
-                        avg_comment_sentiment=avg_comment_sentiment,
-                        avg_sentiment=combined_sentiment
-                    )
-                except Exception as e:
-                    print(f"Error creating PostCache for post_id {row['id']}: {e}")
-                    continue
-                post_data.append(post_cache)
-                try:
-                    insert_post_cache(conn, post_cache)
-                except Exception as e:
-                    print(f"Error inserting PostCache into database for post_id {row['id']}: {e}")
-                    continue
+
+        # Iterate over fetched posts and attach comment sentiments
+        for _, row in posts_df.iterrows():
+            date = datetime.fromtimestamp(row.get("created_utc"))
+            # if cutoff is None or date > cutoff:
+            #     continue
+            comments_for_post = comments_df[comments_df["post_id"] == row["id"]] if not comments_df.empty else pd.DataFrame()
+            title = (str(row.get("title", "")) + " " + str(row.get("content", ""))).strip()
+            title_sentiment = get_sentiment([title])[0]
+            comment_texts = comments_for_post["content"].tolist() if not comments_for_post.empty else []
+            comment_sentiments = get_sentiment(comment_texts)
+            avg_comment_sentiment = np.mean(comment_sentiments) if comment_sentiments else 0.0
+            combined_sentiment = np.mean([title_sentiment, avg_comment_sentiment])
+            try:
+                post_cache = PostCache(
+                    post_id=row["id"],
+                    query=brand,
+                    subreddit=row.get("subreddit", "all"),
+                    datetime=datetime.fromtimestamp(row.get("created_utc")),
+                    title_sentiment=title_sentiment,
+                    avg_comment_sentiment=avg_comment_sentiment,
+                    avg_sentiment=combined_sentiment
+                )
+            except Exception as e:
+                print(f"Error creating PostCache for post_id {row['id']}: {e}")
+                continue
+            post_data.append(post_cache)
+            try:
+                insert_post_cache(conn, post_cache)
+            except Exception as e:
+                print("Error inserting PostCache into database for post_id %s: %s" % (row['id'], e))
+                continue
+    # elapsed = time.perf_counter() - start
+    # print("get_all_post_data for %s returned %d posts in %.3fs" % (brand, len(post_data), elapsed))
     return post_data
