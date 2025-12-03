@@ -1,12 +1,14 @@
 FROM python:3.12.12-slim
 
-COPY ./requirements.txt ./
-RUN pip install -r ./requirements.txt
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY ./src/ ./
+ADD . /app
+WORKDIR /app
+
+RUN uv sync --locked
 EXPOSE 8080
 
-RUN useradd app
-USER app
+# RUN useradd app
+# USER app
 
-CMD ["fastapi", "run",  "--port", "8080"]
+CMD ["uv", "run", "fastapi", "run", "src/api.py", "--port", "8080"]

@@ -1,11 +1,12 @@
 FROM python:3.12.12-slim
 
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ADD . /app
 WORKDIR /app
 
-COPY ./requirements.txt ./
-RUN pip install -r ./requirements.txt
-
-COPY ./main.py ./
+RUN uv sync --locked
 EXPOSE 8501
 
-CMD ["streamlit", "run", "main.py","--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["uv", "run", "streamlit", "run", "main.py","--server.port=8501", "--server.address=0.0.0.0"]
