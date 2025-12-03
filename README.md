@@ -16,19 +16,19 @@ or
 ```
 git clone https://version.aalto.fi/gitlab/parniud1/data-science-project-2025-group-1.git
 ```
-You will also need to create .env files in the reddit-backend and yt-backend folder with the following structure: 
-In the reddit-backend folder:
+You will also need to create .env files in the reddit-backend and yt-backend folder with the following structure (the keys are obtained through Reddit and Youtube APIs):
+In the reddit-backend folder: 
 ```
-REDDIT_APP_SECRET="fI8OFPNuG336lzBOH5_ZnMne2baifA"
-REDDIT_APP_NAME="ds-proj"
-REDDIT_APP_ID="sFoMD1k36r1I3XrTroP2vw"
+REDDIT_APP_SECRET= 
+REDDIT_APP_NAME= 
+REDDIT_APP_ID=t
 
 ML_URL = http://ml:8080/get_sentiment
 
 ```
 In the yt-backend folder:
 ```
-YOUTUBE_KEY =  AIzaSyDUFrGQZNfkr_xsE6YPLV-ePBLoU_Tx4ug
+YOUTUBE_KEY =  
 
 ML_URL = http://ml:8080/get_sentiment
 
