@@ -1,6 +1,5 @@
 import os
 import time
-from threading import ExceptHookArgs
 
 import plotly.io as pio
 import requests
@@ -20,29 +19,46 @@ def render_charts(url: str, brands: list[str], key_start: str = ""):
         st.write("No brands provided.")
         return
     try:
-        st.info("Attempting to fetch data...")
+        wordcloud_image = None
+        with st.empty():
+            st.info("Attempting to fetch data...")
 
-        if "yt" in url.lower():
-            st.info(f"Requesting: {url}wordcloud?brand={brand}")
-            print("requesting url...")
-            image = requests.get(f"{url}wordcloud?brand={brand}").content
-            st.image(image, caption="Word Cloud")
+            if "yt" in url.lower() and len(brands) == 1:
+                brand = brands[0]
+                # st.info(f"Requesting: {url}wordcloud?brand={brand}")
+                print("requesting url...")
+                try:
+                    wordcloud_image = requests.get(
+                        f"{url}wordcloud?brand={brand}"
+                    ).content
+                except Exception as e:
+                    print(e)
+                    pass
 
-        # brand_str = ",".join(brands) #add this line if the backends accept comma-separated in a single parameter
-        # st.write(params)
-        start = time.perf_counter()
-        resp = requests.post(url + "multibrand", json=brands)
-        end = time.perf_counter()
-        data = resp.json()
+            resp = requests.post(url + "multibrand", json=brands)
+            data = resp.json()
 
-        st.info(f"Executed the request in {(end - start):.3f} s.")
+            end = time.perf_counter()
+
+            st.info(f"Executed the request in {(end - start):.3f} s.")
 
         if resp.status_code != 200:
+            st.error(
+                "Something went wrong. The data was supposed to be here, but we didn't get it."
+            )
             st.error(str(data))
-        # st.write(data)
+            return
 
         st.success("Successfully received all the data.")
         # st.info(data)
+        if wordcloud_image is None:
+            st.info("Wordcloud wasn't produced.")
+        else:
+            try:
+                st.image(wordcloud_image, caption="Word Cloud")
+            except Exception as e:
+                print(e)
+
         for obj in data:
             # st.info(obj)
             try:
