@@ -1,8 +1,9 @@
 import asyncio
+import os
 
 import aiohttp
 
-address = "http://ml:8080/get_sentiment"
+address = os.environ.get("ML_URL", "http://ml:8080/get_sentiment")
 
 
 async def get_sentiment(texts: list[str]) -> list[float]:
