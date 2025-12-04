@@ -24,6 +24,7 @@ def render_charts(url: str, brands: list[str], key_start: str = ""):
 
         if "yt" in url.lower():
             st.info(f"Requesting: {url}wordcloud?brand={brand}")
+            print("requesting url...")
             image = requests.get(f"{url}wordcloud?brand={brand}").content
             st.image(image, caption="Word Cloud")
 
